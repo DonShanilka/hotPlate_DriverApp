@@ -33,6 +33,12 @@
         }
       ],
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow HotPlate Driver to use your location while you deliver orders."
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {
