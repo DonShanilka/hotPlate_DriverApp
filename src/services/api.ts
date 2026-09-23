@@ -37,3 +37,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
     throw new Error("Unexpected response fromat from server.");
   }
 }
+
+export async function apiGet<T>(params: string): Promise<T> {
+    const token = await AsyncStorage.getItem("token");
+    const headers: Record<string, string> = token ? {Authorization: `Bearer ${token}`} : {};
+
+    const response = await fetch(`${Base_URL}${params}`, {headers});
+    const json = await parseResponse<T>(response);
+
+    if (!response.ok) {
+        throw new Error((json as any)?.message || "Service error");
+    }
+
+    return json;
+}
