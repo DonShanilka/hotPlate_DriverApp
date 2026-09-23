@@ -73,3 +73,25 @@ export async function apiPost<T>(path: string, body: any): Promise<T> {
 
     return json;
 }
+
+export async function apiPut<T>(path: string, body: any): Promise<T> {
+    const token = await AsyncStorage.getItem("token");
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? {Authorization: `Bearer ${token}`} : {}),
+    };
+
+    const response = await fetch(`${Base_URL}${path}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(body),
+    });
+
+    const json = await parseResponse<T>(response);
+
+    if (!response.ok) {
+        throw new Error((json as any)?.message || "Server error");
+    }
+
+    return json;
+}
