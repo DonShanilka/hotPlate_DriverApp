@@ -5,7 +5,7 @@ import {
     loginDriver,
     RegisterData,
     registerDriver,
-} from "../api/auth.api";
+} from "../services/api";
 import {
     clearAuth,
     getToken,

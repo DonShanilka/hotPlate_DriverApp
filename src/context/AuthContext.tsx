@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 
-import { LoginData, RegisterData } from "../api/auth.api";
+import { LoginData, RegisterData } from "../services/api";
 import {
     hydrateAuth,
     login as loginUser,

@@ -1,5 +1,5 @@
-import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
 const localHost =
   Constants.manifest?.debuggerHost?.split(":").shift() ||
@@ -10,13 +10,25 @@ export const Base_URL = __DEV__
   ? `http://${localHost}:3000/api`
   : "http://localhost:3000/api";
 
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone: string;
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (response.status === 204) {
     return {} as T;
   }
 
-  const contentType =
-    response.headers.get("Content-Type")?.toLocaleLowerCase() || "";
+  const contentType = response.headers.get("Content-Type")?.toLowerCase() || "";
   const text = await response.text();
 
   if (!text) {
@@ -26,74 +38,77 @@ async function parseResponse<T>(response: Response): Promise<T> {
   if (contentType.includes("application/json")) {
     try {
       return JSON.parse(text) as T;
-    } catch (parseError) {
-      throw new Error("Invalid JSON response from Server.");
+    } catch {
+      throw new Error("Invalid JSON response from server.");
     }
   }
 
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw new Error("Unexpected response fromat from server.");
+    throw new Error("Unexpected response format from server.");
   }
 }
 
-export async function apiGet<T>(params: string): Promise<T> {
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
   const token = await AsyncStorage.getItem("token");
-  const headers: Record<string, string> = token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
 
-  const response = await fetch(`${Base_URL}${params}`, { headers });
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export async function apiGet<T>(path: string): Promise<T> {
+  const response = await fetch(`${Base_URL}${path}`, {
+    headers: await getAuthHeaders(),
+  });
   const json = await parseResponse<T>(response);
 
   if (!response.ok) {
-    throw new Error((json as any)?.message || "Service error");
+    throw new Error((json as { message?: string }).message || "Service error");
   }
 
   return json;
 }
 
-export async function apiPost<T>(path: string, body: any): Promise<T> {
-  const token = await AsyncStorage.getItem("token");
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${Base_URL}${path}`, {
     method: "POST",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    },
     body: JSON.stringify(body),
   });
-
   const json = await parseResponse<T>(response);
 
   if (!response.ok) {
-    throw new Error((json as any)?.message || "Server error");
+    throw new Error((json as { message?: string }).message || "Server error");
   }
 
   return json;
 }
 
-export async function apiPut<T>(path: string, body: any): Promise<T> {
-  const token = await AsyncStorage.getItem("token");
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
+export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${Base_URL}${path}`, {
     method: "PUT",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(await getAuthHeaders()),
+    },
     body: JSON.stringify(body),
   });
-
   const json = await parseResponse<T>(response);
 
   if (!response.ok) {
-    throw new Error((json as any)?.message || "Server error");
+    throw new Error((json as { message?: string }).message || "Server error");
   }
 
   return json;
+}
+
+export function loginDriver<T>(data: LoginData): Promise<T> {
+  return apiPost<T>("/users/login", data);
+}
+
+export function registerDriver<T>(data: RegisterData): Promise<T> {
+  return apiPost<T>("/users/register", data);
 }
