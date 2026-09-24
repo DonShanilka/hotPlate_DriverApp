@@ -105,10 +105,3 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   return json;
 }
 
-export function loginDriver<T>(data: LoginData): Promise<T> {
-  return apiPost<T>("/users/login", data);
-}
-
-export function registerDriver<T>(data: RegisterData): Promise<T> {
-  return apiPost<T>("/users/register", data);
-}

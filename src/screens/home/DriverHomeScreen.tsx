@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
     getCurrentLocation,
     requestLocationPermission,
-} from "../../services/location.service";
+} from "../../lib/services/location.service";
 
 type DriverLocation = {
   latitude: number;
