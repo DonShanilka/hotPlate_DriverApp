@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import DriverMap from "@/components/driver/DriverMap";
-import { useAuth } from "../../context/AuthContext";
 import {
     getCurrentLocation,
     requestLocationPermission,
 } from "../../lib/services/location.service";
+import { useAppSelector } from "../../redux/store/hooks";
 
 type DriverLocation = {
   latitude: number;
@@ -14,7 +14,7 @@ type DriverLocation = {
 };
 
 export default function DriverHomeScreen() {
-  const { user } = useAuth();
+  const user = useAppSelector((state) => state.auth.user);
   const [location, setLocation] = useState<DriverLocation | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 

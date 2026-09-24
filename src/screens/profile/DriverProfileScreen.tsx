@@ -1,63 +1,44 @@
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useAuth } from "../../context/AuthContext";
+import { logout } from "../../redux/features/auth/authThunk";
+import { useAppDispatch, useAppSelector } from "../../redux/store/hooks";
 
 export default function DriverProfileScreen() {
-  const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => {
+          void dispatch(logout());
         },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: logout,
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Driver Profile
-      </Text>
+      <Text style={styles.title}>Driver Profile</Text>
 
-      <Text style={styles.label}>
-        Name
-      </Text>
+      <Text style={styles.label}>Name</Text>
 
       <Text style={styles.value}>
         {user?.firstName} {user?.lastName}
       </Text>
 
-      <Text style={styles.label}>
-        Email
-      </Text>
+      <Text style={styles.label}>Email</Text>
 
-      <Text style={styles.value}>
-        {user?.email}
-      </Text>
+      <Text style={styles.value}>{user?.email}</Text>
 
-      <TouchableOpacity
-        style={styles.logout}
-        onPress={handleLogout}
-      >
-        <Text style={styles.logoutText}>
-          Logout
-        </Text>
+      <TouchableOpacity style={styles.logout} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </View>
   );
