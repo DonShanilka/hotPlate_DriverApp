@@ -39,59 +39,61 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function apiGet<T>(params: string): Promise<T> {
-    const token = await AsyncStorage.getItem("token");
-    const headers: Record<string, string> = token ? {Authorization: `Bearer ${token}`} : {};
+  const token = await AsyncStorage.getItem("token");
+  const headers: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
 
-    const response = await fetch(`${Base_URL}${params}`, {headers});
-    const json = await parseResponse<T>(response);
+  const response = await fetch(`${Base_URL}${params}`, { headers });
+  const json = await parseResponse<T>(response);
 
-    if (!response.ok) {
-        throw new Error((json as any)?.message || "Service error");
-    }
+  if (!response.ok) {
+    throw new Error((json as any)?.message || "Service error");
+  }
 
-    return json;
+  return json;
 }
 
 export async function apiPost<T>(path: string, body: any): Promise<T> {
-    const token = await AsyncStorage.getItem("token");
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(token ? {Authorization: `Bearer ${token}`} : {}),
-    };
+  const token = await AsyncStorage.getItem("token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 
-    const response = await fetch(`${Base_URL}${path}`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-    });
+  const response = await fetch(`${Base_URL}${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
 
-    const json = await parseResponse<T>(response);
+  const json = await parseResponse<T>(response);
 
-    if (!response.ok) {
-        throw new Error((json as any)?.message || "Server error");;
-    }
+  if (!response.ok) {
+    throw new Error((json as any)?.message || "Server error");
+  }
 
-    return json;
+  return json;
 }
 
 export async function apiPut<T>(path: string, body: any): Promise<T> {
-    const token = await AsyncStorage.getItem("token");
-    const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(token ? {Authorization: `Bearer ${token}`} : {}),
-    };
+  const token = await AsyncStorage.getItem("token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 
-    const response = await fetch(`${Base_URL}${path}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(body),
-    });
+  const response = await fetch(`${Base_URL}${path}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(body),
+  });
 
-    const json = await parseResponse<T>(response);
+  const json = await parseResponse<T>(response);
 
-    if (!response.ok) {
-        throw new Error((json as any)?.message || "Server error");
-    }
+  if (!response.ok) {
+    throw new Error((json as any)?.message || "Server error");
+  }
 
-    return json;
+  return json;
 }

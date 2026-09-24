@@ -1,96 +1,36 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
+import { LoginData, RegisterData } from "../api/auth.api";
 import {
-  clearAuth,
-  getToken,
-  getUser,
-  saveAuth,
-} from "../storage/auth.storage";
-
-import { loginDriver, registerDriver } from "../api/auth.api";
-
-interface AuthContextType {
-  token: string | null;
-  user: any | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+    hydrateAuth,
+    login as loginUser,
+    logout as logoutUser,
+    register as registerUser,
+} from "../store/authSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    loadAuth();
-  }, []);
+    void dispatch(hydrateAuth());
+  }, [dispatch]);
 
-  const loadAuth = async () => {
-    try {
-      const storedToken = await getToken();
-      const storedUser = await getUser();
-
-      setToken(storedToken);
-      setUser(storedUser);
-    } catch (error) {
-      console.log("Failed to load auth:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    const response = await loginDriver({
-      email,
-      password,
-    });
-
-    const authToken = response.token;
-    const authUser = response.user;
-
-    await saveAuth(authToken, authUser);
-
-    setToken(authToken);
-    setUser(authUser);
-  };
-
-  const register = async (data: any) => {
-    await registerDriver(data);
-  };
-
-  const logout = async () => {
-    await clearAuth();
-
-    setToken(null);
-    setUser(null);
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        token,
-        user,
-        loading,
-        login,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return children;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector((state) => state.auth);
 
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-
-  return context;
+  return {
+    token: auth.token,
+    user: auth.user,
+    loading: auth.status === "loading" || auth.status === "idle",
+    error: auth.error,
+    login: (credentials: LoginData) =>
+      dispatch(loginUser(credentials)).unwrap(),
+    register: (data: RegisterData) => dispatch(registerUser(data)).unwrap(),
+    logout: () => dispatch(logoutUser()).unwrap(),
+  };
 }
