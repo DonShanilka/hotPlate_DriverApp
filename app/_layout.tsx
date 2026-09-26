@@ -1,6 +1,9 @@
+import "../src/global.css";
+
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { Provider } from "react-redux";
+import { AuthProvider } from "../src/context/AuthContext";
 import { hydrateAuth } from "../src/redux/features/auth/authThunk";
 import { useAppDispatch } from "../src/redux/store/hooks";
 import { store } from "../src/redux/store/store";
@@ -18,7 +21,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <RootNavigator />
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </Provider>
   );
 }
