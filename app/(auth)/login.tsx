@@ -1,4 +1,5 @@
-import LoginScreen from "../../src/screens/auth/LoginScreen";
+import LoginScreen from "@/screens/auth/LoginScreen";
+
 
 export default function Register() {
   return <LoginScreen />;
