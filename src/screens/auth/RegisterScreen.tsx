@@ -14,22 +14,7 @@ function RegisterScreen() {
 
   const handleRegister = async () => {
     setError(null);
-
-    // if (
-    //   !name.trim() ||
-    //   !email.trim() ||
-    //   !password.trim() ||
-    //   !confirmPassword.trim()
-    // ) {
-    //   setError("Pleas fill all fields.")
-    //   return;
-    // }
-
-    // try {
-    //   setLoading(true);
-
-    //   await apiPost
-    // }
+    
   };
 
   return <div>Register Screen</div>;

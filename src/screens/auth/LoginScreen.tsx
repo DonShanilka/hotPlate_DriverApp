@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
-  SafeAreaView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    SafeAreaView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import { AntDesign, Feather, FontAwesome } from "@expo/vector-icons";
@@ -14,6 +15,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useAuth } from "@/context/AuthContext";
 import { apiPost } from "@/lib/api/client";
+
+import LoginImage from "../../../assets/images/loginPage/login_image.png";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -63,7 +66,7 @@ export default function LoginScreen() {
     <SafeAreaView className="flex-1 bg-white px-6">
       {/* Illustration */}
       <View className="items-center mt-10 mb-8">
-        {/* <Image source={LoginImage} className="w-56 h-56" resizeMode="contain" /> */}
+        <Image source={LoginImage} className="w-56 h-56" resizeMode="contain" />
       </View>
 
       <View className="absolute top-80 left-0 right-0 px-6 pt-12">
