@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
     Image,
     SafeAreaView,
+    ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
@@ -63,7 +64,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white px-6">
+    <ScrollView className="flex-1 bg-white px-6">
       {/* Illustration */}
       <View className="items-center mt-10 mb-8">
         <Image source={LoginImage} className="w-56 h-56" resizeMode="contain" />
@@ -169,12 +170,12 @@ export default function LoginScreen() {
 
         {/* Bottom */}
         <View className="flex-row justify-center mt-10">
-          <Text className="text-gray-500">Don't have an account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+          <Text className="text-gray-500">Don&apos;t have an account?</Text>
+          <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
             <Text className="text-green-500 font-bold ml-2 mb-2">Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </ScrollView>
   );
 }

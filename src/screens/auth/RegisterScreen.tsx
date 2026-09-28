@@ -1,5 +1,11 @@
 import { apiPost } from "@/lib/api/client";
-import { AntDesign, Feather, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import {
+    AntDesign,
+    Feather,
+    FontAwesome,
+    FontAwesome5,
+} from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
     Image,
@@ -12,6 +18,7 @@ import {
 } from "react-native";
 
 export default function RegisterScreen() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,7 +59,7 @@ export default function RegisterScreen() {
         phone: "",
       });
 
-      navigation.navigate("Login");
+      router.replace("/(auth)/login");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -118,10 +125,10 @@ export default function RegisterScreen() {
             />
 
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Feather 
-              name={showPassword ? "eye" : "eye-off"}
-              size={20}
-              color="#9CA3AF"
+              <Feather
+                name={showPassword ? "eye" : "eye-off"}
+                size={20}
+                color="#9CA3AF"
               />
             </TouchableOpacity>
           </View>
@@ -139,10 +146,10 @@ export default function RegisterScreen() {
             />
 
             <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
-              <Feather 
-              name={showConfirm ? "eye" : "eye-off"}
-              size={20}
-              color="#9CA3AF"
+              <Feather
+                name={showConfirm ? "eye" : "eye-off"}
+                size={20}
+                color="#9CA3AF"
               />
             </TouchableOpacity>
           </View>
@@ -150,7 +157,7 @@ export default function RegisterScreen() {
           {error && <Text className="text-red-500 mt-4">{error}</Text>}
 
           {/* register button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleRegister}
             activeOpacity={0.9}
             className="bg-green-500 rounded-xl h-14 items-center justify-center mt-7"
@@ -183,11 +190,10 @@ export default function RegisterScreen() {
           {/* Login */}
           <View className="flex-row justify-center mt-6">
             <Text className="text-gray-500">Already have an account?</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
               <Text className="text-green-500 font-bold ml-2">Log In</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </ScrollView>
     </SafeAreaView>
