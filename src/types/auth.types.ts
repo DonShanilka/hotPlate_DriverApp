@@ -5,7 +5,7 @@ export interface User {
   email: string;
   phone?: string;
   address?: string;
-  role: 'CUSTOMER' | 'DRIVER' | 'RESTAURANT' | 'ADMIN';
+  role: 'DRIVER';
   profile_image?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
   createdAt?: string;

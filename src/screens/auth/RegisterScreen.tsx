@@ -19,7 +19,7 @@ import {
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,17 +34,17 @@ export default function RegisterScreen() {
     setError(null);
 
     if (
-      !name.trim() ||
+      !firstName.trim() ||
       !email.trim() ||
       !password.trim() ||
       !confirmPassword.trim()
     ) {
-      setError("Pleas fill all fields.");
+      setError("Please fill all fields.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Password do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -52,11 +52,12 @@ export default function RegisterScreen() {
       setLoading(true);
 
       await apiPost("/users/register", {
-        frist_name: name,
+        first_name: firstName.trim(),
         last_name: "",
         email,
         password,
         phone: "",
+        role: "DRIVER",
       });
 
       router.replace("/(auth)/login");
@@ -92,11 +93,11 @@ export default function RegisterScreen() {
           <View className="border border-gray-200 rounded-xl flex-row items-center px-4 h-14 mb-4">
             <FontAwesome5 name="user-alt" size={16} colour="#9CA3AF" />
             <TextInput
-              placeholder="Full Name"
+              placeholder="First Name"
               className="flex-1 ml-3 text-gray-700"
               placeholderTextColor="#9CA3AF"
-              value={name}
-              onChangeText={setName}
+              value={firstName}
+              onChangeText={setFirstName}
             />
           </View>
 

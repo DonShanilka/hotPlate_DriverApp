@@ -1,1 +1,1 @@
-export { default } from "./DriverMap.web";
+export { default } from "./DriverMap.native";

@@ -19,7 +19,7 @@ export default function DriverMap({ latitude, longitude }: Props) {
         referrerPolicy: "no-referrer-when-downgrade",
         style: styles.map,
       })}
-      <View pointerEvents="none" style={styles.locationLabel}>
+      <View pointerEvents="box-none" style={styles.locationLabel}>
         <Text style={styles.coordinates}>
           Driver location: {latitude.toFixed(5)}, {longitude.toFixed(5)}
         </Text>
