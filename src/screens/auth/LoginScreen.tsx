@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-    Image,
-    SafeAreaView,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { AntDesign, Feather, FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -21,56 +13,73 @@ import LoginImage from "../../../assets/images/loginPage/login_image.png";
 
 export default function LoginScreen() {
   const router = useRouter();
-
   const { setUser } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
-
   const [remember, setRemember] = useState(false);
-  const [loading, setLoading] = useState(false);
 
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
     try {
-      const result = await apiPost<{ success: boolean; data: any }>(
-        "/users/login",
-        {
-          email,
-          password,
-        },
-      );
+      const result = await apiPost<{
+        success: boolean;
+        data: any;
+        token?: string;
+      }>("/users/login", {
+        email: email.trim(),
+        password,
+      });
 
       if (result?.data) {
-        const token = (result as any)?.token || (result.data as any)?.token;
+        const token =
+          result?.token || result?.data?.token || result?.data?.accessToken;
 
         if (token) {
-          await AsyncStorage.setItem("token", token);
+          if (remember) {
+            await AsyncStorage.setItem("token", token);
+          } else {
+            await AsyncStorage.setItem("token", token);
+          }
         }
 
         await setUser(result.data);
+
         router.replace("/(driver)/home");
+      } else {
+        setError("Login failed. Please check your credentials.");
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView className="flex-1 bg-white px-6">
+    <View className="flex-1 bg-white px-6">
       {/* Illustration */}
-      <View className="items-center mt-10 mb-8">
-        <Image source={LoginImage} className="w-56 h-56" resizeMode="contain" />
+      <View className="items-center mt-40 mb-8">
+        <Image source={LoginImage} className="w-64 h-64" resizeMode="contain" />
       </View>
 
-      <View className="absolute top-80 left-0 right-0 px-6 pt-12">
+      <View className="absolute top-106 left-0 right-0 px-6 pt-12">
         {/* Title */}
         <Text className="text-3xl font-bold text-gray-800 mb-2">Login</Text>
         <Text className="text-gray-500 mb-8">
@@ -78,7 +87,7 @@ export default function LoginScreen() {
         </Text>
       </View>
 
-      <View className="absolute bottom-10 left-0 right-0 px-6">
+      <View className="absolute bottom-14 left-0 right-0 px-6">
         {/* Email */}
         <View className="flex-row items-center border border-gray-200 rounded-xl px-4 h-14 mb-4">
           <Feather name="mail" size={20} color="#9CA3AF" />
@@ -170,12 +179,12 @@ export default function LoginScreen() {
 
         {/* Bottom */}
         <View className="flex-row justify-center mt-10">
-          <Text className="text-gray-500">Don&apos;t have an account?</Text>
-          <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
+          <Text className="text-gray-500">Don't have an account?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
             <Text className="text-green-500 font-bold ml-2 mb-2">Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
