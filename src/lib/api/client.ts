@@ -13,6 +13,17 @@ interface ErrorResponse {
   error?: string;
 }
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly path: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (response.status === 204) {
     return {} as T;
@@ -56,15 +67,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   try {
     payload = await parseResponse<T>(response);
   } catch {
-    throw new Error(`Request failed with status ${response.status}.`);
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}.`,
+      response.status,
+      path,
+    );
   }
 
   if (!response.ok) {
     const error = payload as ErrorResponse;
-    throw new Error(
-      error.message ||
-        error.error ||
-        `Request failed with status ${response.status}.`,
+    const serverMessage = error.message || error.error;
+    throw new ApiError(
+      serverMessage
+        ? `${serverMessage} (${path}, HTTP ${response.status})`
+        : `Request to ${path} failed with status ${response.status}.`,
+      response.status,
+      path,
     );
   }
 

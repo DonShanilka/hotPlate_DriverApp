@@ -1,24 +1,24 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
 import {
-  getDriverProfile,
-  updateDriverProfile,
+    getDriverProfile,
+    updateDriverProfile,
 } from "../../../lib/api/driver.api";
 import {
-  clearDriverProfile,
-  getCachedDriverProfile,
-  saveDriverProfile,
+    clearDriverProfile,
+    getCachedDriverProfile,
+    saveDriverProfile,
 } from "../../../storage/driver.storage";
 import type {
-  DriverProfile,
-  DriverProfileUpdate,
+    DriverProfile,
+    DriverProfileUpdate,
 } from "../../../types/driver.types";
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
 
 export const loadDriverProfile = createAsyncThunk<
-  DriverProfile,
+  DriverProfile | null,
   void,
   { rejectValue: string }
 >("driver/loadProfile", async (_, { rejectWithValue }) => {
@@ -26,7 +26,8 @@ export const loadDriverProfile = createAsyncThunk<
     const cachedProfile = await getCachedDriverProfile();
     try {
       const profile = await getDriverProfile();
-      await saveDriverProfile(profile);
+      if (profile) await saveDriverProfile(profile);
+      else await clearDriverProfile();
       return profile;
     } catch (error) {
       if (cachedProfile) return cachedProfile;

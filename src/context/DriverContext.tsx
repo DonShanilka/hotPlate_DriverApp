@@ -1,22 +1,19 @@
 import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
 } from "react";
 
-import { useAuth } from "./AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  loadDriverProfile,
-  saveDriverProfileChanges,
+    loadDriverProfile,
+    saveDriverProfileChanges,
 } from "../redux/features/driver/driverThunk";
 import { useAppDispatch, useAppSelector } from "../redux/store/hooks";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import type {
-  DriverProfile,
-  DriverProfileUpdate,
-} from "../types/driver.types";
+import type { DriverProfile, DriverProfileUpdate } from "../types/driver.types";
+import { useAuth } from "./AuthContext";
 
 interface DriverContextValue {
   profile: DriverProfile | null;
@@ -35,8 +32,10 @@ export function DriverProvider({ children }: { children: ReactNode }) {
   const driverState = useAppSelector((state) => state.driver);
 
   const refresh = useCallback(() => {
-    if (user) void dispatch(loadDriverProfile());
-  }, [dispatch, user]);
+    void AsyncStorage.getItem("token").then((token) => {
+      if (token) void dispatch(loadDriverProfile());
+    });
+  }, [dispatch]);
 
   useEffect(() => {
     if (!authLoading && driverState.status === "idle") {

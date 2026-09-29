@@ -1,8 +1,8 @@
 import type {
-  DriverProfile,
-  DriverProfileUpdate,
+    DriverProfile,
+    DriverProfileUpdate,
 } from "../../types/driver.types";
-import { apiGet, apiPut } from "./client";
+import { ApiError, apiGet, apiPut } from "./client";
 
 const DRIVER_PROFILE_PATH = "/drivers/profile";
 
@@ -11,44 +11,58 @@ function isDriverProfile(value: unknown): value is DriverProfile {
   const candidate = value as Partial<DriverProfile>;
   return Boolean(
     candidate.userId ||
-      candidate.vehicleType ||
-      candidate.vehicleNumber ||
-      candidate.licenseNumber,
+    candidate.vehicleType ||
+    candidate.vehicleNumber ||
+    candidate.licenseNumber,
   );
 }
 
-function unwrapDriverProfile(response: unknown): DriverProfile {
+function findDriverProfile(response: unknown): DriverProfile | null {
   if (isDriverProfile(response)) return response;
 
   if (response && typeof response === "object") {
     const envelope = response as Record<string, unknown>;
-    for (const key of ["data", "driver", "profile", "result"]) {
+    for (const key of [
+      "data",
+      "driver",
+      "driverProfile",
+      "profile",
+      "result",
+    ]) {
       const nested = envelope[key];
       if (nested !== undefined) {
-        try {
-          return unwrapDriverProfile(nested);
-        } catch {
-          // Continue through the common API response envelope keys.
-        }
+        const profile = findDriverProfile(nested);
+        if (profile) return profile;
       }
     }
   }
 
-  throw new Error("The server response did not include a driver profile.");
+  return null;
 }
 
-export async function getDriverProfile(): Promise<DriverProfile> {
-  const response = await apiGet<unknown>(DRIVER_PROFILE_PATH);
-  console.log(response);
-  return unwrapDriverProfile(response);
+export async function getDriverProfile(): Promise<DriverProfile | null> {
+  try {
+    const response = await apiGet<unknown>(DRIVER_PROFILE_PATH);
+    return findDriverProfile(response);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error;
+
+    // Some backends include the driver document in the authenticated user profile
+    // rather than exposing a dedicated GET /drivers/profile endpoint.
+    const userResponse = await apiGet<unknown>("/users/profile");
+    return findDriverProfile(userResponse);
+  }
 }
 
 export async function updateDriverProfile(
   updates: DriverProfileUpdate,
 ): Promise<DriverProfile> {
-  const response = await apiPut<unknown>(
-    DRIVER_PROFILE_PATH,
-    updates,
-  );
-  return unwrapDriverProfile(response);
+  const response = await apiPut<unknown>(DRIVER_PROFILE_PATH, updates);
+  const profile = findDriverProfile(response);
+  if (!profile) {
+    throw new Error(
+      "Driver details were updated, but the server returned no driver profile.",
+    );
+  }
+  return profile;
 }

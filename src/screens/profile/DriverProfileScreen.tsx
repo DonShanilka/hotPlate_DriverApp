@@ -87,6 +87,9 @@ export default function DriverProfileScreen() {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
+        style: "cancel",
+      },
+      {
         text: "Logout",
         style: "destructive",
         onPress: () => {
@@ -169,6 +172,19 @@ export default function DriverProfileScreen() {
             </Text>
           </View>
         </View>
+
+        {!profile ? (
+          <View className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <Text className="font-semibold text-amber-900">
+              Driver details are not set up yet.
+            </Text>
+            <Text className="mt-1 text-sm text-amber-800">
+              Your account is loaded, but the backend did not return a driver
+              record. Ask the backend to create/link a driver record for this
+              user, then refresh this screen.
+            </Text>
+          </View>
+        ) : null}
 
         <VehicleDetails
           vehicleType={vehicleType}
