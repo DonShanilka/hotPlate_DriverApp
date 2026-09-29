@@ -16,6 +16,22 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## Map setup
+
+Google Maps needs an API key for native builds. Create a Google Maps Platform
+key, enable the Maps SDK for Android and/or iOS, and restrict the key to this
+app's Android package or iOS bundle identifier. Do not commit real API keys.
+
+Set `GOOGLE_MAPS_ANDROID_API_KEY` and `GOOGLE_MAPS_IOS_API_KEY` in the
+environment used to run or build Expo. For EAS builds, add them as EAS
+environment variables. After changing either key, rebuild the native app; a
+Metro reload cannot update native map configuration. iOS uses Apple Maps as a
+visible fallback when an iOS Google Maps key is not configured. Android uses
+Google Maps and needs its key for standalone builds.
+
+In a browser, the app uses the Google Maps embed, which may require a separately
+configured Maps Embed API key depending on Google Maps Platform restrictions.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
