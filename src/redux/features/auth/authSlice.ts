@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import type { AuthUser } from "../../../lib/api/authApi";
 import { hydrateAuth, login, logout, register } from "./authThunk";
@@ -23,6 +23,11 @@ const authSlice = createSlice({
   reducers: {
     clearAuthError(state) {
       state.error = null;
+    },
+    setAuthUser(state, action: PayloadAction<AuthUser | null>) {
+      state.user = action.payload;
+      if (action.payload) state.status = "succeeded";
+      else if (state.status !== "loading") state.status = "idle";
     },
   },
   extraReducers: (builder) => {
@@ -69,5 +74,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuthError } = authSlice.actions;
+export const { clearAuthError, setAuthUser } = authSlice.actions;
 export default authSlice.reducer;

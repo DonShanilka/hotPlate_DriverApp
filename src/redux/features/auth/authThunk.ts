@@ -14,6 +14,7 @@ import {
     getUser,
     saveAuth,
 } from "../../../storage/auth.storage";
+import { clearDriverProfile } from "../../../storage/driver.storage";
 
 interface AuthHydration {
   token: string | null;
@@ -58,5 +59,5 @@ export const register = createAsyncThunk<
 });
 
 export const logout = createAsyncThunk("auth/logout", async () => {
-  await clearAuth();
+  await Promise.all([clearAuth(), clearDriverProfile()]);
 });

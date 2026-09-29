@@ -5,6 +5,7 @@ interface DriverStatusProps {
   onAvailabilityChange: (isAvailable: boolean) => void;
   rating?: number;
   userId?: string;
+  editable: boolean;
 }
 
 export default function DriverStatus({
@@ -12,6 +13,7 @@ export default function DriverStatus({
   onAvailabilityChange,
   rating,
   userId,
+  editable,
 }: DriverStatusProps) {
   return (
     <View className="mb-4 rounded-2xl bg-white p-4">
@@ -29,12 +31,20 @@ export default function DriverStatus({
               : "You are offline"}
           </Text>
         </View>
-        <Switch
-          value={isAvailable}
-          onValueChange={onAvailabilityChange}
-          trackColor={{ false: "#d1d5db", true: "#86efac" }}
-          thumbColor={isAvailable ? "#16a34a" : "#f4f3f4"}
-        />
+        {editable ? (
+          <Switch
+            value={isAvailable}
+            onValueChange={onAvailabilityChange}
+            trackColor={{ false: "#d1d5db", true: "#86efac" }}
+            thumbColor={isAvailable ? "#16a34a" : "#f4f3f4"}
+          />
+        ) : (
+          <Text
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${isAvailable ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}
+          >
+            {isAvailable ? "Available" : "Offline"}
+          </Text>
+        )}
       </View>
       <Text className="mb-2 text-[13px] font-medium text-gray-500">Rating</Text>
       <Text className="mb-3.5 text-[17px] text-gray-900">

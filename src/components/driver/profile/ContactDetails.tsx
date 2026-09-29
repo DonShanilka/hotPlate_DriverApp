@@ -8,6 +8,7 @@ interface ContactDetailsProps {
   onPhoneChange: (value: string) => void;
   address: string;
   onAddressChange: (value: string) => void;
+  editable: boolean;
 }
 
 export default function ContactDetails({
@@ -16,6 +17,7 @@ export default function ContactDetails({
   onPhoneChange,
   address,
   onAddressChange,
+  editable,
 }: ContactDetailsProps) {
   return (
     <View className="mb-4 rounded-2xl bg-white p-4">
@@ -32,6 +34,7 @@ export default function ContactDetails({
         onChangeText={onPhoneChange}
         placeholder="Enter phone number"
         keyboardType="phone-pad"
+        editable={editable}
       />
       <ProfileField
         label="Address"
@@ -39,6 +42,7 @@ export default function ContactDetails({
         onChangeText={onAddressChange}
         placeholder="Enter your address"
         multiline
+        editable={editable}
       />
     </View>
   );

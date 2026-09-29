@@ -1,67 +1,54 @@
-import { useCallback, useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import ContactDetails from "../../components/driver/profile/ContactDetails";
 import DriverStatus from "../../components/driver/profile/DriverStatus";
 import VehicleDetails from "../../components/driver/profile/VehicleDetails";
-import {
-  getDriverProfile,
-  updateDriverProfile,
-} from "../../lib/api/driver.api";
+import { useAuth } from "../../context/AuthContext";
+import { useDriver } from "../../context/DriverContext";
 import { logout } from "../../redux/features/auth/authThunk";
-import { useAppDispatch, useAppSelector } from "../../redux/store/hooks";
-import type {
-  DriverProfile,
-  DriverProfileUpdate,
-  DriverVehicleType,
-} from "../../types/driver.types";
+import { useAppDispatch } from "../../redux/store/hooks";
+import type { DriverProfileUpdate } from "../../types/driver.types";
 
 export default function DriverProfileScreen() {
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const [profile, setProfile] = useState<DriverProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [vehicleType, setVehicleType] = useState<DriverVehicleType>("BIKE");
-  const [vehicleNumber, setVehicleNumber] = useState("");
-  const [licenseNumber, setLicenseNumber] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [isAvailable, setIsAvailable] = useState(false);
+  const { user } = useAuth();
+  console.log(user);
+  const { profile, loading, saving, error, refresh, update } = useDriver();
+  const [form, setForm] = useState<DriverProfileUpdate | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const loadProfile = useCallback(async () => {
-    try {
-      const loadedProfile = await getDriverProfile();
-      setProfile(loadedProfile);
-      setVehicleType(loadedProfile.vehicleType ?? "BIKE");
-      setVehicleNumber(loadedProfile.vehicleNumber ?? "");
-      setLicenseNumber(loadedProfile.licenseNumber ?? "");
-      setPhone(loadedProfile.phone ?? "");
-      setAddress(loadedProfile.address ?? "");
-      setIsAvailable(loadedProfile.isAvailable ?? false);
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Unable to load your driver profile.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const vehicleType = form?.vehicleType ?? profile?.vehicleType ?? "BIKE";
+  const vehicleNumber = form?.vehicleNumber ?? profile?.vehicleNumber ?? "";
+  const licenseNumber = form?.licenseNumber ?? profile?.licenseNumber ?? "";
+  const phone = form?.phone ?? profile?.phone ?? "";
+  const address = form?.address ?? profile?.address ?? "";
+  const isAvailable = form?.isAvailable ?? profile?.isAvailable ?? false;
 
-  useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
+  const updateForm = (updates: Partial<DriverProfileUpdate>) => {
+    setForm((current) => ({
+      vehicleType: current?.vehicleType ?? profile?.vehicleType ?? "BIKE",
+      vehicleNumber: current?.vehicleNumber ?? profile?.vehicleNumber ?? "",
+      licenseNumber: current?.licenseNumber ?? profile?.licenseNumber ?? "",
+      phone: current?.phone ?? profile?.phone ?? "",
+      address: current?.address ?? profile?.address ?? "",
+      isAvailable: current?.isAvailable ?? profile?.isAvailable ?? false,
+      ...updates,
+    }));
+  };
+
+  // useEffect(() => {
+  //   void dispatch(loadDriverProfile());
+  // }, [dispatch]);
 
   const handleSave = async () => {
     if (
@@ -70,7 +57,8 @@ export default function DriverProfileScreen() {
       !phone.trim() ||
       !address.trim()
     ) {
-      setError(
+      Alert.alert(
+        "Missing details",
         "Please complete your vehicle, license, phone, and address details.",
       );
       return;
@@ -85,26 +73,13 @@ export default function DriverProfileScreen() {
       isAvailable,
     };
 
-    setSaving(true);
-    setError(null);
     try {
-      const updatedProfile = await updateDriverProfile(updates);
-      setProfile(updatedProfile);
-      setVehicleType(updatedProfile.vehicleType ?? vehicleType);
-      setVehicleNumber(updatedProfile.vehicleNumber ?? updates.vehicleNumber);
-      setLicenseNumber(updatedProfile.licenseNumber ?? updates.licenseNumber);
-      setPhone(updatedProfile.phone ?? updates.phone);
-      setAddress(updatedProfile.address ?? updates.address);
-      setIsAvailable(updatedProfile.isAvailable ?? isAvailable);
+      await update(updates);
+      setForm(null);
+      setIsEditing(false);
       Alert.alert("Profile updated", "Your driver details have been saved.");
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Unable to update your driver profile.",
-      );
-    } finally {
-      setSaving(false);
+    } catch {
+      // Save errors are exposed from Redux state.
     }
   };
 
@@ -112,9 +87,6 @@ export default function DriverProfileScreen() {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
-        style: "cancel",
-      },
-      {
         text: "Logout",
         style: "destructive",
         onPress: () => {
@@ -142,9 +114,35 @@ export default function DriverProfileScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View className="px-5 pt-14 pb-9">
-        <Text className="mb-[22px] text-[28px] font-bold text-gray-900">
-          Driver Profile
-        </Text>
+        <View className="mb-[22px] flex-row items-center justify-between">
+          <Text className="text-[28px] font-bold text-gray-900">
+            Driver Profile
+          </Text>
+          {profile ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={
+                isEditing ? "Cancel profile editing" : "Edit profile"
+              }
+              className="h-11 w-11 items-center justify-center rounded-full bg-green-100"
+              onPress={() => {
+                if (isEditing) {
+                  setForm(null);
+                  setIsEditing(false);
+                } else {
+                  setForm(null);
+                  setIsEditing(true);
+                }
+              }}
+            >
+              <Ionicons
+                name={isEditing ? "close" : "create-outline"}
+                size={22}
+                color="#15803d"
+              />
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
         <View className="mb-4 flex-row items-center rounded-2xl bg-white p-4">
           {profileImageUri ? (
@@ -155,13 +153,13 @@ export default function DriverProfileScreen() {
           ) : (
             <View className="h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <Text className="text-[26px] font-bold text-green-700">
-                {(user?.firstName || "D").charAt(0).toUpperCase()}
+                {(user?.first_name || "D").charAt(0).toUpperCase()}
               </Text>
             </View>
           )}
           <View className="ml-3.5 flex-1">
             <Text className="text-lg font-bold text-gray-900">
-              {user?.firstName || "Driver"} {user?.lastName || ""}
+              {user?.first_name || "Driver"} {user?.last_name || ""}
             </Text>
             <Text className="mt-1 text-gray-500">{user?.email || ""}</Text>
             <Text className="mt-1 text-xs font-semibold text-green-700">
@@ -174,26 +172,33 @@ export default function DriverProfileScreen() {
 
         <VehicleDetails
           vehicleType={vehicleType}
-          onVehicleTypeChange={setVehicleType}
+          onVehicleTypeChange={(value) => updateForm({ vehicleType: value })}
           vehicleNumber={vehicleNumber}
-          onVehicleNumberChange={setVehicleNumber}
+          onVehicleNumberChange={(value) =>
+            updateForm({ vehicleNumber: value })
+          }
           licenseNumber={licenseNumber}
-          onLicenseNumberChange={setLicenseNumber}
+          onLicenseNumberChange={(value) =>
+            updateForm({ licenseNumber: value })
+          }
+          editable={isEditing}
         />
 
         <ContactDetails
           email={user?.email}
           phone={phone}
-          onPhoneChange={setPhone}
+          onPhoneChange={(value) => updateForm({ phone: value })}
           address={address}
-          onAddressChange={setAddress}
+          onAddressChange={(value) => updateForm({ address: value })}
+          editable={isEditing}
         />
 
         <DriverStatus
           isAvailable={isAvailable}
-          onAvailabilityChange={setIsAvailable}
+          onAvailabilityChange={(value) => updateForm({ isAvailable: value })}
           rating={profile?.rating}
           userId={profile?.userId}
+          editable={isEditing}
         />
 
         {error ? (
@@ -202,29 +207,43 @@ export default function DriverProfileScreen() {
           </Text>
         ) : null}
 
-        <TouchableOpacity
-          className={`h-[52px] items-center justify-center rounded-[11px] bg-green-600 ${saving ? "opacity-65" : ""}`}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-base font-bold text-white">Save changes</Text>
-          )}
-        </TouchableOpacity>
+        {isEditing ? (
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              className="h-[52px] flex-1 items-center justify-center rounded-[11px] border border-gray-300 bg-white"
+              onPress={() => {
+                setForm(null);
+                setIsEditing(false);
+              }}
+              disabled={saving}
+            >
+              <Text className="font-semibold text-gray-700">Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`h-[52px] flex-1 items-center justify-center rounded-[11px] bg-green-600 ${saving ? "opacity-65" : ""}`}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="text-base font-bold text-white">
+                  Save changes
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
-        {error && !profile ? (
+        {!profile ? (
           <TouchableOpacity
             className="items-center py-3.5"
             onPress={() => {
-              setLoading(true);
-              setError(null);
-              void loadProfile();
+              refresh();
             }}
           >
             <Text className="font-semibold text-green-700">
-              Retry loading profile
+              {error ? "Retry loading profile" : "Refresh profile"}
             </Text>
           </TouchableOpacity>
         ) : null}
