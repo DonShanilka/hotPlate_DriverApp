@@ -4,13 +4,14 @@ import {
   Alert,
   Image,
   ScrollView,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
+import ContactDetails from "../../components/driver/profile/ContactDetails";
+import DriverStatus from "../../components/driver/profile/DriverStatus";
+import VehicleDetails from "../../components/driver/profile/VehicleDetails";
 import {
   getDriverProfile,
   updateDriverProfile,
@@ -171,113 +172,29 @@ export default function DriverProfileScreen() {
           </View>
         </View>
 
-        <View className="mb-4 rounded-2xl bg-white p-4">
-          <Text className="mb-3.5 text-[17px] font-bold text-gray-900">
-            Vehicle
-          </Text>
-          <Text className="mb-2 text-[13px] font-medium text-gray-500">
-            Vehicle type
-          </Text>
-          <View className="mb-3.5 flex-row">
-            {(["BIKE", "CAR"] as const).map((type) => (
-              <TouchableOpacity
-                key={type}
-                accessibilityRole="button"
-                accessibilityState={{ selected: vehicleType === type }}
-                onPress={() => setVehicleType(type)}
-                className={`mr-2.5 rounded-[10px] border px-5 py-2.5 ${vehicleType === type ? "border-green-600 bg-green-50" : "border-gray-300"}`}
-              >
-                <Text
-                  className={`font-semibold ${vehicleType === type ? "text-green-700" : "text-gray-600"}`}
-                >
-                  {type === "BIKE" ? "Bike" : "Car"}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <ProfileInput
-            label="Vehicle number"
-            value={vehicleNumber}
-            onChangeText={setVehicleNumber}
-            placeholder="Enter vehicle number"
-            autoCapitalize="characters"
-          />
-          <ProfileInput
-            label="License number"
-            value={licenseNumber}
-            onChangeText={setLicenseNumber}
-            placeholder="Enter license number"
-            autoCapitalize="characters"
-          />
-        </View>
+        <VehicleDetails
+          vehicleType={vehicleType}
+          onVehicleTypeChange={setVehicleType}
+          vehicleNumber={vehicleNumber}
+          onVehicleNumberChange={setVehicleNumber}
+          licenseNumber={licenseNumber}
+          onLicenseNumberChange={setLicenseNumber}
+        />
 
-        <View className="mb-4 rounded-2xl bg-white p-4">
-          <Text className="mb-3.5 text-[17px] font-bold text-gray-900">
-            Contact details
-          </Text>
-          <Text className="mb-2 text-[13px] font-medium text-gray-500">
-            Email
-          </Text>
-          <Text className="mb-3.5 text-[17px] text-gray-900">
-            {user?.email || "Not provided"}
-          </Text>
-          <ProfileInput
-            label="Phone"
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="Enter phone number"
-            keyboardType="phone-pad"
-          />
-          <ProfileInput
-            label="Address"
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Enter your address"
-            multiline
-          />
-        </View>
+        <ContactDetails
+          email={user?.email}
+          phone={phone}
+          onPhoneChange={setPhone}
+          address={address}
+          onAddressChange={setAddress}
+        />
 
-        <View className="mb-4 rounded-2xl bg-white p-4">
-          <Text className="mb-3.5 text-[17px] font-bold text-gray-900">
-            Driver status
-          </Text>
-          <View className="mb-3 flex-row items-center justify-between">
-            <View className="flex-1">
-              <Text className="mb-2 text-[13px] font-medium text-gray-500">
-                Available for deliveries
-              </Text>
-              <Text className="text-xs text-gray-400">
-                {isAvailable
-                  ? "You can receive delivery requests"
-                  : "You are offline"}
-              </Text>
-            </View>
-            <Switch
-              value={isAvailable}
-              onValueChange={setIsAvailable}
-              trackColor={{ false: "#d1d5db", true: "#86efac" }}
-              thumbColor={isAvailable ? "#16a34a" : "#f4f3f4"}
-            />
-          </View>
-          <Text className="mb-2 text-[13px] font-medium text-gray-500">
-            Rating
-          </Text>
-          <Text className="mb-3.5 text-[17px] text-gray-900">
-            {typeof profile?.rating === "number"
-              ? `${profile.rating.toFixed(1)} / 5`
-              : "Not rated yet"}
-          </Text>
-          {profile?.userId ? (
-            <>
-              <Text className="mb-2 text-[13px] font-medium text-gray-500">
-                Driver ID
-              </Text>
-              <Text className="mb-3.5 text-[17px] text-gray-900">
-                {profile.userId}
-              </Text>
-            </>
-          ) : null}
-        </View>
+        <DriverStatus
+          isAvailable={isAvailable}
+          onAvailabilityChange={setIsAvailable}
+          rating={profile?.rating}
+          userId={profile?.userId}
+        />
 
         {error ? (
           <Text accessibilityRole="alert" className="mb-3.5 text-red-600">
@@ -320,43 +237,5 @@ export default function DriverProfileScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
-  );
-}
-
-interface ProfileInputProps {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  autoCapitalize?: "none" | "sentences" | "words" | "characters";
-  keyboardType?: "default" | "phone-pad";
-  multiline?: boolean;
-}
-
-function ProfileInput({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  autoCapitalize = "sentences",
-  keyboardType = "default",
-  multiline = false,
-}: ProfileInputProps) {
-  return (
-    <View className="mb-3.5">
-      <Text className="mb-2 text-[13px] font-medium text-gray-500">
-        {label}
-      </Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#9ca3af"
-        autoCapitalize={autoCapitalize}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        className={`min-h-12 rounded-[10px] border border-gray-200 bg-white px-3 py-2.5 text-gray-900 ${multiline ? "min-h-[82px]" : ""}`}
-      />
-    </View>
   );
 }
