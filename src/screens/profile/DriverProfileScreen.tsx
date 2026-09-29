@@ -22,7 +22,6 @@ import type { DriverProfileUpdate } from "../../types/driver.types";
 export default function DriverProfileScreen() {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
-  console.log(user);
   const { profile, loading, saving, error, refresh, update } = useDriver();
   const [form, setForm] = useState<DriverProfileUpdate | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -213,6 +212,7 @@ export default function DriverProfileScreen() {
           isAvailable={isAvailable}
           onAvailabilityChange={(value) => updateForm({ isAvailable: value })}
           rating={profile?.rating}
+          totalDeliveries={profile?.totalDeliveries}
           userId={profile?.userId}
           editable={isEditing}
         />

@@ -4,6 +4,7 @@ interface DriverStatusProps {
   isAvailable: boolean;
   onAvailabilityChange: (isAvailable: boolean) => void;
   rating?: number;
+  totalDeliveries?: number;
   userId?: string;
   editable: boolean;
 }
@@ -12,6 +13,7 @@ export default function DriverStatus({
   isAvailable,
   onAvailabilityChange,
   rating,
+  totalDeliveries,
   userId,
   editable,
 }: DriverStatusProps) {
@@ -51,6 +53,12 @@ export default function DriverStatus({
         {typeof rating === "number"
           ? `${rating.toFixed(1)} / 5`
           : "Not rated yet"}
+      </Text>
+      <Text className="mb-2 text-[13px] font-medium text-gray-500">
+        Total deliveries
+      </Text>
+      <Text className="mb-3.5 text-[17px] text-gray-900">
+        {typeof totalDeliveries === "number" ? totalDeliveries : "0"}
       </Text>
       {userId ? (
         <>
