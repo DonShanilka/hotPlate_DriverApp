@@ -1,14 +1,14 @@
-import "../src/global.css";
+import "../global.css";
 
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { Provider } from "react-redux";
-import { AuthProvider } from "../src/context/AuthContext";
-import { DriverProvider } from "../src/context/DriverContext";
-import { OrderProvider } from "../src/context/OrderContext";
-import { hydrateAuth } from "../src/redux/features/auth/authThunk";
-import { useAppDispatch } from "../src/redux/store/hooks";
-import { store } from "../src/redux/store/store";
+import { AuthProvider } from "../context/AuthContext";
+import { DriverProvider } from "../context/DriverContext";
+import { OrderProvider } from "../context/OrderContext";
+import { hydrateAuth } from "../redux/features/auth/authThunk";
+import { useAppDispatch } from "../redux/store/hooks";
+import { store } from "../redux/store/store";
 
 function RootNavigator() {
   const dispatch = useAppDispatch();
