@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -14,17 +15,55 @@ import ArrivedOrderCard, {
 } from "../../components/orders/ArrivedOrderCard";
 import { useOrder } from "../../context/OrderContext";
 
+type FilterTab = "active" | "completed" | "all";
+
+const TERMINAL_STATUSES = new Set(["DELIVERED", "CANCELLED"]);
+
 export default function MyDeliveriesScreen() {
   const router = useRouter();
   const { orders, loading, error, refreshOrders } = useOrder();
+  const [activeTab, setActiveTab] = useState<FilterTab>("active");
 
   // Cast once at the boundary — safe because the backend always
   // populates userId / restaurantId / driverId before returning orders.
   const populatedOrders = orders as unknown as PopulatedOrder[];
 
+  // Filter orders based on the selected tab
+  const filteredOrders = useMemo(() => {
+    switch (activeTab) {
+      case "active":
+        return populatedOrders.filter(
+          (o) => !TERMINAL_STATUSES.has(o.status),
+        );
+      case "completed":
+        return populatedOrders.filter((o) =>
+          TERMINAL_STATUSES.has(o.status),
+        );
+      case "all":
+      default:
+        return populatedOrders;
+    }
+  }, [populatedOrders, activeTab]);
+
+  // Counts for the tab badges
+  const activeCount = useMemo(
+    () => populatedOrders.filter((o) => !TERMINAL_STATUSES.has(o.status)).length,
+    [populatedOrders],
+  );
+  const completedCount = useMemo(
+    () => populatedOrders.filter((o) => TERMINAL_STATUSES.has(o.status)).length,
+    [populatedOrders],
+  );
+
   const handleRefresh = () => {
     void refreshOrders().catch(() => undefined);
   };
+
+  const tabs: { key: FilterTab; label: string; count: number }[] = [
+    { key: "active", label: "Active", count: activeCount },
+    { key: "completed", label: "Completed", count: completedCount },
+    { key: "all", label: "All", count: populatedOrders.length },
+  ];
 
   return (
     <View className="flex-1 bg-slate-50">
@@ -55,11 +94,41 @@ export default function MyDeliveriesScreen() {
           </Pressable>
         </View>
 
-        <View className="mt-3 self-start rounded-full bg-emerald-50 px-3 py-1.5">
-          <Text className="text-xs font-semibold text-emerald-800">
-            {populatedOrders.length}{" "}
-            {populatedOrders.length === 1 ? "order" : "orders"} assigned
-          </Text>
+        {/* ── Filter tabs ── */}
+        <View className="mt-3 flex-row">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <Pressable
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                className={`mr-2 flex-row items-center rounded-full px-3.5 py-2 ${
+                  isActive ? "bg-emerald-600" : "bg-slate-100"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-semibold ${
+                    isActive ? "text-white" : "text-slate-600"
+                  }`}
+                >
+                  {tab.label}
+                </Text>
+                <View
+                  className={`ml-1.5 min-w-[20px] items-center rounded-full px-1.5 py-0.5 ${
+                    isActive ? "bg-white/20" : "bg-slate-200"
+                  }`}
+                >
+                  <Text
+                    className={`text-[10px] font-bold ${
+                      isActive ? "text-white" : "text-slate-500"
+                    }`}
+                  >
+                    {tab.count}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -91,7 +160,7 @@ export default function MyDeliveriesScreen() {
           </Pressable>
         </View>
       ) : /* Empty state — pull to refresh available */
-      populatedOrders.length === 0 ? (
+      filteredOrders.length === 0 ? (
         <ScrollView
           contentContainerClassName="flex-grow items-center justify-center px-8 py-10"
           refreshControl={
@@ -103,14 +172,28 @@ export default function MyDeliveriesScreen() {
           }
         >
           <View className="h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-            <Ionicons name="bicycle-outline" size={32} color="#059669" />
+            <Ionicons
+              name={
+                activeTab === "completed"
+                  ? "checkmark-circle-outline"
+                  : "bicycle-outline"
+              }
+              size={32}
+              color="#059669"
+            />
           </View>
           <Text className="mt-4 text-lg font-bold text-slate-900">
-            No assigned deliveries
+            {activeTab === "active"
+              ? "No active deliveries"
+              : activeTab === "completed"
+                ? "No completed deliveries"
+                : "No assigned deliveries"}
           </Text>
           <Text className="mt-2 text-center text-sm leading-5 text-slate-500">
-            Orders assigned to your driver profile will appear here.{"\n"}
-            Pull down to refresh.
+            {activeTab === "active"
+              ? "New orders assigned to you will appear here."
+              : "Orders you've delivered will show up here."}
+            {"\n"}Pull down to refresh.
           </Text>
         </ScrollView>
       ) : (
@@ -142,7 +225,7 @@ export default function MyDeliveriesScreen() {
             </View>
           ) : null}
 
-          {populatedOrders.map((order) => (
+          {filteredOrders.map((order) => (
             <Pressable
               key={order._id}
               accessibilityRole="button"

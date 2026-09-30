@@ -3,14 +3,17 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
 } from "react";
 
 import { fetchDriverOrders, updateOrderStatus } from "../redux/features/order/orderThunk";
 import { useAppDispatch, useAppSelector } from "../redux/store/hooks";
-import { getMatchingDriverId } from "../types/driver.types";
 import type { Order, OrderStatus } from "../types/order.types";
 import { useAuth } from "./AuthContext";
 import { useDriver } from "./DriverContext";
+
+/** How often (ms) the order list auto-refreshes. */
+const POLL_INTERVAL_MS = 30_000;
 
 interface OrderContextValue {
   orders: Order[];
@@ -33,12 +36,28 @@ export function OrderProvider({
   const { user } = useAuth();
   const { profile } = useDriver();
   const ordersState = useAppSelector((state) => state.orders);
-  const driverId = getMatchingDriverId(user?._id, profile);
+
+  // The backend route GET /orders/driver/:userId expects the *user* _id,
+  // not the driver document _id. It resolves the driver profile internally.
+  const userId = user?._id ?? null;
+
+  // We only fetch when the driver profile is loaded AND it belongs to this user.
+  const isLinked = Boolean(
+    userId && profile?._id,
+  );
 
   const refreshOrders = useCallback(async () => {
-    if (!driverId) return;
-    await dispatch(fetchDriverOrders(driverId)).unwrap();
-  }, [dispatch, driverId]);
+    // The backend uses Driver.findOne({ userId }), so it expects the User ID!
+    if (!userId || !isLinked) return;
+    
+    try {
+      console.log("Fetching orders for User ID:", userId);
+      const res = await dispatch(fetchDriverOrders(userId)).unwrap();
+      console.log("Orders fetched successfully! Count:", res.length);
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    }
+  }, [dispatch, userId, isLinked]);
 
   const changeStatus = useCallback(
     async (orderId: string, status: OrderStatus) => {
@@ -47,13 +66,26 @@ export function OrderProvider({
     [dispatch],
   );
 
+  // Initial fetch when the user / driver profile become available
   useEffect(() => {
-    if (!driverId) return;
+    if (!userId || !isLinked) return;
     const timer = setTimeout(() => {
       void refreshOrders().catch(() => undefined);
     }, 0);
     return () => clearTimeout(timer);
-  }, [driverId, refreshOrders]);
+  }, [userId, isLinked, refreshOrders]);
+
+  // Auto-refresh every 30 seconds so the driver sees new assignments
+  const refreshRef = useRef(refreshOrders);
+  refreshRef.current = refreshOrders;
+
+  useEffect(() => {
+    if (!userId || !isLinked) return;
+    const interval = setInterval(() => {
+      void refreshRef.current().catch(() => undefined);
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [userId, isLinked]);
 
   return (
     <OrderContext.Provider

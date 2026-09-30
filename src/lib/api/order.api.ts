@@ -34,13 +34,13 @@ export interface OrderFilters {
 export type CreateOrderPayload = Partial<Omit<Order, "_id" | "createdAt">>;
 
 export const orderApi = {
-  // POST /orders
+  // POST /order
   async createOrder(data: CreateOrderPayload): Promise<Order> {
-    const response = await apiPost<unknown>("/orders", data);
+    const response = await apiPost<unknown>("/order", data);
     return unwrap<Order>(response);
   },
 
-  // GET /orders?status=&userId=&restaurantId=&driverId=
+  // GET /order?status=&userId=&restaurantId=&driverId=
   async getAllOrders(filters: OrderFilters = {}): Promise<Order[]> {
     const params = new URLSearchParams();
     (Object.entries(filters) as [string, string | undefined][]).forEach(
@@ -49,40 +49,40 @@ export const orderApi = {
       },
     );
     const qs = params.toString();
-    const response = await apiGet<unknown>(`/orders${qs ? `?${qs}` : ""}`);
+    const response = await apiGet<unknown>(`/order${qs ? `?${qs}` : ""}`);
     return unwrapList(response);
   },
 
-  // GET /orders/:id
+  // GET /order/:id
   async getOrderById(orderId: string): Promise<Order> {
     const response = await apiGet<unknown>(
-      `/orders/${encodeURIComponent(orderId)}`,
+      `/order/${encodeURIComponent(orderId)}`,
     );
     return unwrap<Order>(response);
   },
 
-  // GET /orders/user/:userId
+  // GET /order/user/:userId
   async getOrdersByUser(userId: string): Promise<Order[]> {
     const response = await apiGet<unknown>(
-      `/orders/user/${encodeURIComponent(userId)}`,
+      `/order/user/${encodeURIComponent(userId)}`,
     );
     return unwrapList(response);
   },
 
-  // GET /orders/user/:userId/pending
+  // GET /order/user/:userId/pending
   async getPendingOrdersByUser(userId: string): Promise<Order[]> {
     const response = await apiGet<unknown>(
-      `/orders/user/${encodeURIComponent(userId)}/pending`,
+      `/order/user/${encodeURIComponent(userId)}/pending`,
     );
     return unwrapList(response);
   },
 
-  // GET /orders/driver/:userId
+  // GET /order/driver/:userId
   // takes the driver's *user* ID. The backend resolves the Driver
   // profile itself (getOrdersByDriverUserId) and returns its orders.
   async getDriverOrders(driverUserId: string): Promise<Order[]> {
     const response = await apiGet<unknown>(
-      `/orders/driver/${encodeURIComponent(driverUserId)}`,
+      `/order/driver/${encodeURIComponent(driverUserId)}`,
     );
     return unwrapList(response);
   },
@@ -92,7 +92,7 @@ export const orderApi = {
     status: OrderStatus,
   ): Promise<Order> {
     const response = await apiPatch<unknown>(
-      `/orders/${encodeURIComponent(orderId)}/status`,
+      `/order/${encodeURIComponent(orderId)}/status`,
       { status },
     );
     return unwrap<Order>(response);
@@ -104,7 +104,7 @@ export const orderApi = {
     estimatedDeliveryTime?: number,
   ): Promise<Order> {
     const response = await apiPatch<unknown>(
-      `/orders/${encodeURIComponent(orderId)}/assign-driver`,
+      `/order/${encodeURIComponent(orderId)}/driver`,
       { driverId, estimatedDeliveryTime },
     );
     return unwrap<Order>(response);
@@ -116,7 +116,7 @@ export const orderApi = {
     paymentMethod?: PaymentMethod,
   ): Promise<Order> {
     const response = await apiPatch<unknown>(
-      `/orders/${encodeURIComponent(orderId)}/payment`,
+      `/order/${encodeURIComponent(orderId)}/payment`,
       { paymentStatus, paymentMethod },
     );
     return unwrap<Order>(response);
@@ -124,16 +124,16 @@ export const orderApi = {
 
   async cancelOrder(orderId: string): Promise<Order> {
     const response = await apiPatch<unknown>(
-      `/orders/${encodeURIComponent(orderId)}/cancel`,
+      `/order/${encodeURIComponent(orderId)}/cancel`,
       {},
     );
     return unwrap<Order>(response);
   },
 
-  // DELETE /orders/:id
+  // DELETE /order/:id
   //   async deleteOrder(orderId: string): Promise<{ message: string }> {
   //     const response = await apiDelete<unknown>(
-  //       `/orders/${encodeURIComponent(orderId)}`,
+  //       `/order/${encodeURIComponent(orderId)}`,
   //     );
   //     return unwrap<{ message: string }>(response);
   //   },

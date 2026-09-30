@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { LocationSubscription } from "expo-location";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import DriverMap from "@/components/driver/DriverMap";
 import { useAuth } from "@/context/AuthContext";
 import { useDriver } from "@/context/DriverContext";
+import { useOrder } from "@/context/OrderContext";
 
 import {
   getCurrentLocation,
@@ -23,11 +25,19 @@ type DriverLocation = {
   timestamp?: number;
 };
 
-export default function DriverHomeScreen() {
-  const { user } = useAuth();
-  const { profile, update } = useDriver();
+const TERMINAL = new Set(["DELIVERED", "CANCELLED"]);
 
-  console.log("user", user);
+export default function DriverHomeScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { profile, loading: profileLoading, refresh, setAvailability } =
+    useDriver();
+  const { orders, activeOrder, loading: ordersLoading } = useOrder();
+
+  const activeCount = useMemo(
+    () => orders.filter((o) => !TERMINAL.has(o.status)).length,
+    [orders],
+  );
 
   const [location, setLocation] = useState<DriverLocation | null>(null);
   const [locationLoading, setLocationLoading] = useState(true);
@@ -180,30 +190,27 @@ export default function DriverHomeScreen() {
     };
   }, [isOnline, stopLocationTracking]);
 
+  const ensureDriverProfile = async () => {
+    if (profile?._id) return profile;
+    return await refresh();
+  };
+
   const toggleAvailability = async () => {
     setAvailabilityError(null);
 
     if (isOnline) {
-      if (!profile) {
-        setOnlineOverride(false);
-        stopLocationTracking();
-        return;
-      }
-
       try {
         setAvailabilityLoading(true);
 
-        await update({
-          vehicleType: profile.vehicleType,
-          vehicleNumber: profile.vehicleNumber,
-          licenseNumber: profile.licenseNumber,
-          phone: profile.phone,
-          address: profile.address,
-          isAvailable: false,
-        });
+        const currentProfile = await ensureDriverProfile();
+        if (!currentProfile?._id) {
+          setOnlineOverride(false);
+          stopLocationTracking();
+          return;
+        }
 
+        await setAvailability(false, currentProfile._id);
         setOnlineOverride(false);
-
         stopLocationTracking();
       } catch (error) {
         setAvailabilityError(
@@ -219,33 +226,22 @@ export default function DriverHomeScreen() {
     try {
       setAvailabilityLoading(true);
 
-      // Get GPS before allowing driver to go online
       await requestLocationPermission();
 
       const currentLocation = await getCurrentLocation();
 
-      // Save current location
       setLocation(currentLocation);
       setLocationError(null);
 
-      // Update backend availability
-      if (profile) {
-        await update({
-          vehicleType: profile.vehicleType,
-          vehicleNumber: profile.vehicleNumber,
-          licenseNumber: profile.licenseNumber,
-          phone: profile.phone,
-          address: profile.address,
-          isAvailable: true,
-        });
-      } else {
+      const currentProfile = await ensureDriverProfile();
+      if (!currentProfile?._id) {
         setAvailabilityError(
-          "Driver profile was not found. Online status cannot be saved to the backend.",
+          "No driver profile found. Open Profile, save your vehicle details, then try again.",
         );
-
         return;
       }
 
+      await setAvailability(true, currentProfile._id);
       setOnlineOverride(true);
     } catch (error) {
       setAvailabilityError(
@@ -413,7 +409,9 @@ export default function DriverHomeScreen() {
 
                 <Text className="mt-0.5 text-xs text-gray-500">
                   {isOnline
-                    ? "Waiting for delivery orders"
+                    ? activeCount > 0
+                      ? `${activeCount} active ${activeCount === 1 ? "delivery" : "deliveries"}`
+                      : "Waiting for delivery orders"
                     : "Go online to receive orders"}
                 </Text>
               </View>
@@ -434,6 +432,55 @@ export default function DriverHomeScreen() {
             )}
           </View>
         </View>
+
+        {/* ── DEBUG OVERLAY ── */}
+        <View className="mb-3 rounded-2xl bg-slate-900 p-4 shadow-sm">
+          <Text className="text-sm font-bold text-white mb-2">Debug Info:</Text>
+          <Text className="text-xs text-slate-300">User _id: {user?._id || "none"}</Text>
+          <Text className="text-xs text-slate-300">Driver _id: {profile?._id || "none"}</Text>
+          <Text className="text-xs text-slate-300">Total Orders in Redux: {orders.length}</Text>
+          <Text className="text-xs text-slate-300">Active Count: {activeCount}</Text>
+          {orders.length > 0 && (
+             <Text className="text-xs text-emerald-400 mt-2">First order status: {orders[0].status}</Text>
+          )}
+          {ordersLoading && <Text className="text-xs text-amber-400 mt-2">Fetching orders...</Text>}
+        </View>
+        {/* ── END DEBUG OVERLAY ── */}
+
+        {/* ACTIVE ORDER CARD */}
+
+        {activeOrder && (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/(driver)/active-order",
+                params: { orderId: activeOrder._id },
+              })
+            }
+            className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm"
+          >
+            <View className="flex-row items-center">
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
+                <Ionicons name="bicycle" size={20} color="#059669" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-emerald-900">
+                  Active Delivery
+                </Text>
+                <Text className="mt-0.5 text-xs text-emerald-700">
+                  Order #{activeOrder._id.slice(-6).toUpperCase()} ·{" "}
+                  {activeOrder.status.replaceAll("_", " ")}
+                </Text>
+              </View>
+              <View className="h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
+                <Ionicons name="chevron-forward" size={16} color="#059669" />
+              </View>
+            </View>
+            <Text className="mt-2 text-xs text-emerald-700" numberOfLines={1}>
+              {activeOrder.deliveryAddress}
+            </Text>
+          </Pressable>
+        )}
 
         {/* AVAILABILITY ERROR */}
 
@@ -464,12 +511,13 @@ export default function DriverHomeScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityState={{
-            disabled: availabilityLoading || locationLoading,
+            disabled:
+              availabilityLoading || locationLoading || profileLoading,
           }}
-          disabled={availabilityLoading || locationLoading}
+          disabled={availabilityLoading || locationLoading || profileLoading}
           onPress={toggleAvailability}
           className={`min-h-[56px] flex-row items-center justify-center rounded-2xl ${
-            availabilityLoading || locationLoading
+            availabilityLoading || locationLoading || profileLoading
               ? "bg-gray-400"
               : isOnline
                 ? "bg-gray-700 active:bg-gray-800"

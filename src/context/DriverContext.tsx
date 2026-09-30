@@ -9,6 +9,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
     loadDriverProfile,
+    saveDriverAvailability,
     saveDriverProfileChanges,
 } from "../redux/features/driver/driverThunk";
 import { useAppDispatch, useAppSelector } from "../redux/store/hooks";
@@ -20,8 +21,9 @@ interface DriverContextValue {
   loading: boolean;
   saving: boolean;
   error: string | null;
-  refresh: () => void;
+  refresh: () => Promise<DriverProfile | null>;
   update: (updates: DriverProfileUpdate) => Promise<void>;
+  setAvailability: (isAvailable: boolean, driverId?: string) => Promise<void>;
 }
 
 const DriverContext = createContext<DriverContextValue | undefined>(undefined);
@@ -31,10 +33,10 @@ export function DriverProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const driverState = useAppSelector((state) => state.driver);
 
-  const refresh = useCallback(() => {
-    void AsyncStorage.getItem("token").then((token) => {
-      if (token) void dispatch(loadDriverProfile());
-    });
+  const refresh = useCallback(async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return null;
+    return await dispatch(loadDriverProfile()).unwrap();
   }, [dispatch]);
 
   useEffect(() => {
@@ -52,6 +54,15 @@ export function DriverProvider({ children }: { children: ReactNode }) {
     [dispatch],
   );
 
+  const setAvailability = useCallback(
+    async (isAvailable: boolean, driverId?: string) => {
+      await dispatch(
+        saveDriverAvailability({ isAvailable, driverId }),
+      ).unwrap();
+    },
+    [dispatch],
+  );
+
   return (
     <DriverContext.Provider
       value={{
@@ -61,6 +72,7 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         error: driverState.saveError || driverState.error,
         refresh,
         update,
+        setAvailability,
       }}
     >
       {children}

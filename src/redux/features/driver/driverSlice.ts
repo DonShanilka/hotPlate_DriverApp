@@ -5,6 +5,7 @@ import { logout } from "../auth/authThunk";
 import {
     clearDriverProfileCache,
     loadDriverProfile,
+    saveDriverAvailability,
     saveDriverProfileChanges,
 } from "./driverThunk";
 
@@ -58,6 +59,18 @@ const driverSlice = createSlice({
       .addCase(saveDriverProfileChanges.rejected, (state, action) => {
         state.saveStatus = "failed";
         state.saveError = action.payload || "Unable to update driver profile";
+      })
+      .addCase(saveDriverAvailability.pending, (state) => {
+        state.saveStatus = "loading";
+        state.saveError = null;
+      })
+      .addCase(saveDriverAvailability.fulfilled, (state, action) => {
+        state.profile = action.payload;
+        state.saveStatus = "succeeded";
+      })
+      .addCase(saveDriverAvailability.rejected, (state, action) => {
+        state.saveStatus = "failed";
+        state.saveError = action.payload || "Unable to update online status";
       })
       .addCase(logout.fulfilled, () => initialState)
       .addCase(clearDriverProfileCache.fulfilled, () => initialState);
