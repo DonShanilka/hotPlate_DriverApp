@@ -1,68 +1,104 @@
-import {
+import React, {
   createContext,
-  ReactNode,
   useCallback,
   useContext,
-  useEffect,
 } from "react";
 
-import { loadArrivedOrders } from "../redux/features/order/orderThunk";
-import { useAppDispatch, useAppSelector } from "../redux/store/hooks";
-import type { DriverOrder } from "../types/order.types";
-import { useAuth } from "./AuthContext";
-import { useDriver } from "./DriverContext";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "../redux/store/hooks";
+
+import {
+  fetchDriverOrders,
+  updateOrderStatus,
+} from "../redux/features/order/orderThunk";
+
+import {
+  OrderStatus,
+} from "../types/order.types";
+
 
 interface OrderContextValue {
-  arrivedOrders: DriverOrder[];
-  loading: boolean;
-  refreshing: boolean;
-  error: string | null;
-  refresh: () => void;
+
+  refreshOrders: () => Promise<void>;
+
+  changeStatus: (
+    orderId: string,
+    status: OrderStatus
+  ) => Promise<void>;
+
 }
 
-const OrderContext = createContext<OrderContextValue | undefined>(undefined);
 
-export function OrderProvider({ children }: { children: ReactNode }) {
-  const dispatch = useAppDispatch();
-  const { profile } = useDriver();
-  const { user } = useAuth();
-  console.log("Users", user)
-  const ordersState = useAppSelector((state) => state.orders);
-  console.log('Order Status', ordersState)
-  const driverId =
-    profile?._id && profile.userId === user?._id ? profile._id : null;
+const OrderContext =
+  createContext<
+    OrderContextValue | undefined
+  >(undefined);
 
-  const refresh = useCallback(() => {
-    if (driverId) void dispatch(loadArrivedOrders(driverId));
-  }, [dispatch, driverId]);
 
-  useEffect(() => {
-    if (!driverId) return;
+export function OrderProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
 
-    const initialTimer = setTimeout(() => {
-      void dispatch(loadArrivedOrders(driverId));
-    }, 0);
-    const refreshTimer = setInterval(() => {
-      void dispatch(loadArrivedOrders(driverId));
-    }, 30000);
+  const dispatch =
+    useAppDispatch();
 
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(refreshTimer);
-    };
-  }, [dispatch, driverId]);
+  const driver =
+    useAppSelector(
+      (state) =>
+        state.driver.driver 
+    );
+
+
+  const refreshOrders =
+    useCallback(
+      async () => {
+
+        if (!driver?._id) {
+          return;
+        }
+
+        await dispatch(
+          fetchDriverOrders(
+            driver._id
+          )
+        ).unwrap();
+
+      },
+      [
+        dispatch,
+        driver?._id,
+      ]
+    );
+
+
+  const changeStatus =
+    useCallback(
+      async (
+        orderId: string,
+        status: OrderStatus
+      ) => {
+
+        await dispatch(
+          updateOrderStatus({
+            orderId,
+            status,
+          })
+        ).unwrap();
+
+      },
+      [dispatch]
+    );
+
 
   return (
     <OrderContext.Provider
       value={{
-        arrivedOrders: ordersState.arrived,
-        loading:
-          ordersState.status === "loading" && !ordersState.arrived.length,
-        refreshing:
-          ordersState.status === "loading" &&
-          Boolean(ordersState.arrived.length),
-        error: ordersState.error,
-        refresh,
+        refreshOrders,
+        changeStatus,
       }}
     >
       {children}
@@ -70,8 +106,18 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useOrders() {
-  const context = useContext(OrderContext);
-  if (!context) throw new Error("useOrders must be used within OrderProvider");
+
+export function useOrder() {
+
+  const context =
+    useContext(OrderContext);
+
+  if (!context) {
+
+    throw new Error(
+      "useOrder must be used inside OrderProvider"
+    );
+  }
+
   return context;
 }

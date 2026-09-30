@@ -1,25 +1,54 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
-import type { DriverOrder } from "../types/order.types";
+const ACCESS_TOKEN_KEY = "hotplate_access_token";
+const DRIVER_ID_KEY = "hotplate_driver_id";
 
-const ORDER_CACHE_KEY = "hotplate_driver_arrived_orders";
+export const storage = {
+  async setToken(token: string): Promise<void> {
+    await SecureStore.setItemAsync(
+      ACCESS_TOKEN_KEY,
+      token
+    );
+  },
 
-export async function saveArrivedOrders(orders: DriverOrder[]): Promise<void> {
-  await AsyncStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(orders));
-}
+  async getToken(): Promise<string | null> {
+    return SecureStore.getItemAsync(
+      ACCESS_TOKEN_KEY
+    );
+  },
 
-export async function getCachedArrivedOrders(): Promise<DriverOrder[] | null> {
-  const cached = await AsyncStorage.getItem(ORDER_CACHE_KEY);
-  if (!cached) return null;
-  try {
-    const orders = JSON.parse(cached) as DriverOrder[];
-    return Array.isArray(orders) ? orders : null;
-  } catch {
-    await AsyncStorage.removeItem(ORDER_CACHE_KEY);
-    return null;
-  }
-}
+  async removeToken(): Promise<void> {
+    await SecureStore.deleteItemAsync(
+      ACCESS_TOKEN_KEY
+    );
+  },
 
-export async function clearArrivedOrders(): Promise<void> {
-  await AsyncStorage.removeItem(ORDER_CACHE_KEY);
-}
+  async setDriverId(driverId: string): Promise<void> {
+    await SecureStore.setItemAsync(
+      DRIVER_ID_KEY,
+      driverId
+    );
+  },
+
+  async getDriverId(): Promise<string | null> {
+    return SecureStore.getItemAsync(
+      DRIVER_ID_KEY
+    );
+  },
+
+  async removeDriverId(): Promise<void> {
+    await SecureStore.deleteItemAsync(
+      DRIVER_ID_KEY
+    );
+  },
+
+  async clear(): Promise<void> {
+    await SecureStore.deleteItemAsync(
+      ACCESS_TOKEN_KEY
+    );
+
+    await SecureStore.deleteItemAsync(
+      DRIVER_ID_KEY
+    );
+  },
+};

@@ -1,40 +1,115 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
-
-import { getArrivedDriverOrders } from "../../../lib/api/order.api";
 import {
-    clearArrivedOrders,
-    getCachedArrivedOrders,
-    saveArrivedOrders,
-} from "../../../storage/order.storage";
-import type { DriverOrder } from "../../../types/order.types";
+  createAsyncThunk,
+} from "@reduxjs/toolkit";
 
-const getErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : "Unable to load orders.";
+import {
+  orderApi,
+} from "../../../lib/api/order.api";
 
-export const loadArrivedOrders = createAsyncThunk<
-  DriverOrder[],
-  string,
-  { rejectValue: string }
->("orders/loadArrived", async (driverId, { rejectWithValue }) => {
-  try {
-    if (!driverId) return [];
-    try {
-      const orders = await getArrivedDriverOrders(driverId);
-      await saveArrivedOrders(orders);
-      return orders;
-    } catch (error) {
-      const cachedOrders = await getCachedArrivedOrders();
-      if (cachedOrders) return cachedOrders;
-      throw error;
+import {
+  Order,
+  OrderStatus,
+} from "../../../types/order.types";
+
+
+export const fetchDriverOrders =
+  createAsyncThunk<
+    Order[],
+    string,
+    {
+      rejectValue: string;
     }
-  } catch (error) {
-    return rejectWithValue(getErrorMessage(error));
-  }
-});
+  >(
+    "orders/fetchDriverOrders",
 
-export const clearOrdersCache = createAsyncThunk(
-  "orders/clearCache",
-  async () => {
-    await clearArrivedOrders();
-  },
-);
+    async (
+      driverId,
+      { rejectWithValue }
+    ) => {
+
+      try {
+
+        return await orderApi.getDriverOrders(
+          driverId
+        );
+
+      } catch (error: any) {
+
+        return rejectWithValue(
+          error.response?.data?.message ??
+          "Failed to load orders"
+        );
+      }
+    }
+  );
+
+
+export const fetchOrderById =
+  createAsyncThunk<
+    Order,
+    string,
+    {
+      rejectValue: string;
+    }
+  >(
+    "orders/fetchOrderById",
+
+    async (
+      orderId,
+      { rejectWithValue }
+    ) => {
+
+      try {
+
+        return await orderApi.getOrderById(
+          orderId
+        );
+
+      } catch (error: any) {
+
+        return rejectWithValue(
+          error.response?.data?.message ??
+          "Failed to load order"
+        );
+      }
+    }
+  );
+
+
+export const updateOrderStatus =
+  createAsyncThunk<
+    Order,
+    {
+      orderId: string;
+      status: OrderStatus;
+    },
+    {
+      rejectValue: string;
+    }
+  >(
+    "orders/updateOrderStatus",
+
+    async (
+      {
+        orderId,
+        status,
+      },
+      { rejectWithValue }
+    ) => {
+
+      try {
+
+        return await orderApi.updateOrderStatus(
+          orderId,
+          status
+        );
+
+      } catch (error: any) {
+
+        return rejectWithValue(
+          error.response?.data?.message ??
+          "Failed to update order"
+        );
+      }
+    }
+  );

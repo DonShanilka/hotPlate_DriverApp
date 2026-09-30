@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { Text, View } from "react-native";
 
-import type { DriverOrder } from "../../../types/order.types";
+import type { DriverOrder } from "../../types/order.types";
 
 type Data = Record<string, unknown>;
 

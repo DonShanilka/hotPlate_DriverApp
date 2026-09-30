@@ -17,7 +17,10 @@ import { useAuth } from "../../context/AuthContext";
 import { useDriver } from "../../context/DriverContext";
 import { logout } from "../../redux/features/auth/authThunk";
 import { useAppDispatch } from "../../redux/store/hooks";
-import type { DriverProfileUpdate } from "../../types/driver.types";
+import {
+    getDriverUserId,
+    type DriverProfileUpdate,
+} from "../../types/driver.types";
 
 export default function DriverProfileScreen() {
   const dispatch = useAppDispatch();
@@ -213,7 +216,7 @@ export default function DriverProfileScreen() {
           onAvailabilityChange={(value) => updateForm({ isAvailable: value })}
           rating={profile?.rating}
           totalDeliveries={profile?.totalDeliveries}
-          userId={profile?.userId}
+          userId={getDriverUserId(profile) ?? undefined}
           editable={isEditing}
         />
 

@@ -1,50 +1,86 @@
-export type MongoId = string;
+export enum OrderStatus {
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  PREPARING = "PREPARING",
+  READY_FOR_PICKUP = "READY_FOR_PICKUP",
+  DRIVER_ASSIGNED = "DRIVER_ASSIGNED",
+  PICKED_UP = "PICKED_UP",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERING = "DELIVERING",
+  ARRIVED = "ARRIVED",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
+}
+
+export enum PaymentStatus {
+  PENDING = "PENDING",
+  PAID = "PAID",
+  FAILED = "FAILED",
+  REFUNDED = "REFUNDED",
+}
+
+export enum PaymentMethod {
+  CASH = "CASH",
+  CASH_ON_DELIVERY = "CASH_ON_DELIVERY",
+  CARD = "CARD",
+  ONLINE = "ONLINE",
+}
 
 export interface OrderItem {
-	_id?: MongoId;
-	productId?: MongoId;
-	name?: string;
-	productName?: string;
-	quantity?: number;
-	price?: number;
-	unitPrice?: number;
-	subtotal?: number;
-	[key: string]: unknown;
+  foodId?: string;
+  name: string;
+  size?: string;
+  quantity: number;
+  price: number;
 }
 
 export interface DeliveryLocation {
-	latitude?: number;
-	longitude?: number;
-	lat?: number;
-	lng?: number;
-	coordinates?: [number, number];
-	[key: string]: unknown;
+  latitude: number;
+  longitude: number;
 }
 
-/** Client representation of the MongoDB Order document returned by the API. */
-export interface DriverOrder {
-	_id: MongoId;
-	userId: MongoId | Record<string, unknown>;
-	restaurantId: MongoId | Record<string, unknown>;
-	driverId: MongoId | Record<string, unknown>;
-	items: OrderItem[];
-	deliveryAddress: string;
-	phoneNumber: string;
-	deliveryLocation?: DeliveryLocation;
-	subtotal: number;
-	deliveryFee: number;
-	totalAmount: number;
-	status: string;
-	paymentStatus: string;
-	paymentMethod: string;
-	notes?: string;
-	createdAt: string;
-	updatedAt: string;
-	__v?: number;
-	[key: string]: unknown;
+export interface OrderUser {
+  _id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
 }
 
-export interface DriverOrdersQuery {
-	driverIds: string[];
-	status?: string;
+export interface Restaurant {
+  _id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+}
+
+export interface Driver {
+  _id: string;
+  vehicleType?: string;
+  vehicleNumber?: string;
+  phone?: string;
+}
+
+export interface Order {
+    
+  _id: string;
+  userId: string | OrderUser;
+  restaurantId?: string | Restaurant | null;
+  driverId?: string | Driver | null;
+  items: OrderItem[];
+  deliveryAddress: string;
+  phoneNumber: string;
+  deliveryLocation?: DeliveryLocation;
+  subtotal?: number;
+  deliveryFee?: number;
+  totalAmount: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  estimatedDeliveryTime?: number;
+  deliveredAt?: string;
+  notes?: string;
+
+  createdAt: string;
+  updatedAt: string;
 }

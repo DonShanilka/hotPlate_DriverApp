@@ -8,7 +8,7 @@ import {
     View,
 } from "react-native";
 
-import ArrivedOrderCard from "../../components/driver/orders/ArrivedOrderCard";
+import ArrivedOrderCard from "../../components/orders/ArrivedOrderCard";
 import { useOrders } from "../../context/OrderContext";
 
 export default function MyDeliveriesScreen() {

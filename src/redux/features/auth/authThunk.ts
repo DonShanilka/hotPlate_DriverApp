@@ -15,7 +15,7 @@ import {
     saveAuth,
 } from "../../../storage/auth.storage";
 import { clearDriverProfile } from "../../../storage/driver.storage";
-import { clearArrivedOrders } from "../../../storage/order.storage";
+// import { clearArrivedOrders } from "../../../storage/order.storage";
 
 interface AuthHydration {
   token: string | null;
@@ -60,5 +60,7 @@ export const register = createAsyncThunk<
 });
 
 export const logout = createAsyncThunk("auth/logout", async () => {
-  await Promise.all([clearAuth(), clearDriverProfile(), clearArrivedOrders()]);
+  await Promise.all([clearAuth(), clearDriverProfile(), ]);
 });
+
+// clearArrivedOrders()
