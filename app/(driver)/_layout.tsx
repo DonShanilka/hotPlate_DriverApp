@@ -60,6 +60,11 @@ export default function DriverLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="active-order"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

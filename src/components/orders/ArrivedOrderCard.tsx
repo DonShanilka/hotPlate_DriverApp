@@ -88,7 +88,7 @@ function DetailRow({
 }
 
 export default function ArrivedOrderCard({ order }: { order: DriverOrder }) {
-  const raw = order as Data;
+  const raw = order as unknown as Data;
   const customer =
     asData(raw.customer) ?? asData(raw.customerDetails) ?? asData(raw.userId);
   const restaurant =
@@ -160,6 +160,8 @@ export default function ArrivedOrderCard({ order }: { order: DriverOrder }) {
       })()
     : null;
   const orderStatus = findText(raw, ["status", "orderStatus"]);
+  const statusLabel = orderStatus?.replaceAll("_", " ") ?? "UNKNOWN";
+  const statusStyle = getStatusStyle(orderStatus);
   const userId = idValue(raw.userId);
   const restaurantId = idValue(raw.restaurantId);
   const driverId = idValue(raw.driverId);
@@ -170,15 +172,19 @@ export default function ArrivedOrderCard({ order }: { order: DriverOrder }) {
       <View className="flex-row items-center justify-between bg-emerald-50 px-4 py-3.5">
         <View className="flex-1 pr-3">
           <Text className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
-            Arrived order
+            Assigned delivery
           </Text>
           <Text selectable className="mt-1 text-base font-bold text-slate-900">
             #{orderId}
           </Text>
         </View>
-        <View className="flex-row items-center rounded-full bg-emerald-100 px-3 py-1.5">
-          <View className="mr-1.5 h-2 w-2 rounded-full bg-emerald-600" />
-          <Text className="text-xs font-bold text-emerald-800">ARRIVED</Text>
+        <View
+          className={`flex-row items-center rounded-full px-3 py-1.5 ${statusStyle.container}`}
+        >
+          <View className={`mr-1.5 h-2 w-2 rounded-full ${statusStyle.dot}`} />
+          <Text className={`text-xs font-bold ${statusStyle.text}`}>
+            {statusLabel}
+          </Text>
         </View>
       </View>
 
@@ -344,4 +350,40 @@ export default function ArrivedOrderCard({ order }: { order: DriverOrder }) {
       </View>
     </View>
   );
+}
+
+function getStatusStyle(status: string | null): {
+  container: string;
+  dot: string;
+  text: string;
+} {
+  switch (status?.toUpperCase()) {
+    case "ARRIVED":
+    case "DELIVERED":
+      return {
+        container: "bg-emerald-100",
+        dot: "bg-emerald-600",
+        text: "text-emerald-800",
+      };
+    case "CANCELLED":
+      return {
+        container: "bg-red-100",
+        dot: "bg-red-600",
+        text: "text-red-800",
+      };
+    case "OUT_FOR_DELIVERY":
+    case "DELIVERING":
+    case "PICKED_UP":
+      return {
+        container: "bg-blue-100",
+        dot: "bg-blue-600",
+        text: "text-blue-800",
+      };
+    default:
+      return {
+        container: "bg-amber-100",
+        dot: "bg-amber-600",
+        text: "text-amber-800",
+      };
+  }
 }

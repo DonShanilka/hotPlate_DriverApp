@@ -1,19 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import {
-    ActivityIndicator,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 
 import ArrivedOrderCard from "../../components/orders/ArrivedOrderCard";
-import { useOrders } from "../../context/OrderContext";
+import { useOrder } from "../../context/OrderContext";
 
 export default function MyDeliveriesScreen() {
-  const { arrivedOrders, loading, refreshing, error, refresh } = useOrders();
-  console.log("Arrived order", arrivedOrders);
+  const router = useRouter();
+  const { orders, loading, error, refreshOrders } = useOrder();
 
   return (
     <View className="flex-1 bg-slate-50">
@@ -24,45 +25,40 @@ export default function MyDeliveriesScreen() {
               My Deliveries
             </Text>
             <Text className="mt-1 text-sm text-slate-500">
-              Arrived orders assigned to your driver account
+              Orders assigned to your driver account
             </Text>
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Refresh arrived orders"
-            onPress={refresh}
-            disabled={refreshing || loading}
+            accessibilityLabel="Refresh deliveries"
+            disabled={loading}
+            onPress={() => void refreshOrders().catch(() => undefined)}
             className="h-11 w-11 items-center justify-center rounded-full bg-emerald-50"
           >
-            {refreshing || loading ? (
+            {loading ? (
               <ActivityIndicator size="small" color="#059669" />
             ) : (
               <Ionicons name="refresh-outline" size={21} color="#059669" />
             )}
           </Pressable>
         </View>
-        {!loading && !error ? (
-          <View className="mt-3 self-start rounded-full bg-emerald-50 px-3 py-1.5">
-            <Text className="text-xs font-semibold text-emerald-800">
-              {arrivedOrders.length} arrived{" "}
-              {arrivedOrders.length === 1 ? "order" : "orders"}
-            </Text>
-          </View>
-        ) : null}
+        <View className="mt-3 self-start rounded-full bg-emerald-50 px-3 py-1.5">
+          <Text className="text-xs font-semibold text-emerald-800">
+            {orders.length} assigned {orders.length === 1 ? "order" : "orders"}
+          </Text>
+        </View>
       </View>
 
-      {loading && arrivedOrders.length === 0 ? (
+      {loading && orders.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <ActivityIndicator size="large" color="#059669" />
           <Text className="mt-3 text-sm text-slate-500">
-            Loading your orders...
+            Loading deliveries...
           </Text>
         </View>
-      ) : error && arrivedOrders.length === 0 ? (
+      ) : error && orders.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-red-50">
-            <Ionicons name="alert-circle-outline" size={28} color="#dc2626" />
-          </View>
+          <Ionicons name="alert-circle-outline" size={42} color="#dc2626" />
           <Text className="mt-4 text-center font-semibold text-slate-900">
             Could not load deliveries
           </Text>
@@ -70,19 +66,19 @@ export default function MyDeliveriesScreen() {
             {error}
           </Text>
           <Pressable
-            onPress={refresh}
+            onPress={() => void refreshOrders().catch(() => undefined)}
             className="mt-5 rounded-xl bg-emerald-600 px-5 py-3"
           >
             <Text className="font-semibold text-white">Try again</Text>
           </Pressable>
         </View>
-      ) : arrivedOrders.length === 0 ? (
+      ) : orders.length === 0 ? (
         <ScrollView
           contentContainerClassName="flex-grow items-center justify-center px-8 py-10"
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={refresh}
+              refreshing={loading}
+              onRefresh={() => void refreshOrders().catch(() => undefined)}
               tintColor="#059669"
             />
           }
@@ -91,11 +87,11 @@ export default function MyDeliveriesScreen() {
             <Ionicons name="bicycle-outline" size={32} color="#059669" />
           </View>
           <Text className="mt-4 text-lg font-bold text-slate-900">
-            No arrived orders
+            No assigned deliveries
           </Text>
           <Text className="mt-2 text-center text-sm leading-5 text-slate-500">
-            Arrived orders assigned to your driver account will appear here.
-            Pull down to refresh.
+            Orders assigned to your driver profile will appear here. Pull down
+            to refresh.
           </Text>
         </ScrollView>
       ) : (
@@ -104,20 +100,27 @@ export default function MyDeliveriesScreen() {
           contentContainerClassName="px-4 pb-8 pt-4"
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={refresh}
+              refreshing={loading}
+              onRefresh={() => void refreshOrders().catch(() => undefined)}
               tintColor="#059669"
             />
           }
         >
-          {arrivedOrders.map((order) => (
-            <ArrivedOrderCard key={String(order._id)} order={order} />
+          {orders.map((order) => (
+            <Pressable
+              key={order._id}
+              accessibilityRole="button"
+              accessibilityLabel={`Open order ${order._id}`}
+              onPress={() =>
+                router.push({
+                  pathname: "/(driver)/active-order",
+                  params: { orderId: order._id },
+                })
+              }
+            >
+              <ArrivedOrderCard order={order} />
+            </Pressable>
           ))}
-          {error ? (
-            <Text className="mt-2 text-center text-xs text-amber-700">
-              Showing cached orders. Refresh failed: {error}
-            </Text>
-          ) : null}
         </ScrollView>
       )}
     </View>

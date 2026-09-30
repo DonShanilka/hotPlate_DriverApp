@@ -8,10 +8,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useDriver } from "@/context/DriverContext";
 
 import {
-    getCurrentLocation,
-    requestLocationPermission,
-    SRI_LANKA_CENTER,
-    watchDriverLocation,
+  getCurrentLocation,
+  requestLocationPermission,
+  SRI_LANKA_CENTER,
+  watchDriverLocation,
 } from "../../lib/services/location.service";
 
 type DriverLocation = {
@@ -27,40 +27,20 @@ export default function DriverHomeScreen() {
   const { user } = useAuth();
   const { profile, update } = useDriver();
 
-  // --------------------------------------------------
-  // LOCATION STATE
-  // --------------------------------------------------
+  console.log("user", user);
 
   const [location, setLocation] = useState<DriverLocation | null>(null);
-
   const [locationLoading, setLocationLoading] = useState(true);
-
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // --------------------------------------------------
-  // DRIVER AVAILABILITY STATE
-  // --------------------------------------------------
-
   const [onlineOverride, setOnlineOverride] = useState<boolean | null>(null);
-
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
-
   const [availabilityError, setAvailabilityError] = useState<string | null>(
     null,
   );
 
-  // --------------------------------------------------
-  // LOCATION SUBSCRIPTION
-  // --------------------------------------------------
-
   const locationSubscription = useRef<LocationSubscription | null>(null);
-
-  // Backend profile status + local override
   const isOnline = onlineOverride ?? profile?.isAvailable ?? false;
-
-  // --------------------------------------------------
-  // STOP LOCATION WATCHING
-  // --------------------------------------------------
 
   const stopLocationTracking = useCallback(() => {
     if (locationSubscription.current) {
@@ -68,10 +48,6 @@ export default function DriverHomeScreen() {
       locationSubscription.current = null;
     }
   }, []);
-
-  // --------------------------------------------------
-  // GET CURRENT LOCATION
-  // --------------------------------------------------
 
   const loadLocation = useCallback(
     async (isActive: () => boolean = () => true) => {
@@ -107,17 +83,9 @@ export default function DriverHomeScreen() {
     [],
   );
 
-  // --------------------------------------------------
-  // REFRESH LOCATION
-  // --------------------------------------------------
-
   const refreshLocation = async () => {
     await loadLocation();
   };
-
-  // --------------------------------------------------
-  // INITIAL LOCATION
-  // --------------------------------------------------
 
   useEffect(() => {
     let active = true;
@@ -130,12 +98,6 @@ export default function DriverHomeScreen() {
       clearTimeout(timer);
     };
   }, [loadLocation]);
-
-  // --------------------------------------------------
-  // REAL-TIME LOCATION
-  //
-  // Only track GPS when driver is ONLINE.
-  // --------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -218,16 +180,8 @@ export default function DriverHomeScreen() {
     };
   }, [isOnline, stopLocationTracking]);
 
-  // --------------------------------------------------
-  // GO ONLINE / OFFLINE
-  // --------------------------------------------------
-
   const toggleAvailability = async () => {
     setAvailabilityError(null);
-
-    // ==================================================
-    // GO OFFLINE
-    // ==================================================
 
     if (isOnline) {
       if (!profile) {
@@ -261,10 +215,6 @@ export default function DriverHomeScreen() {
 
       return;
     }
-
-    // ==================================================
-    // GO ONLINE
-    // ==================================================
 
     try {
       setAvailabilityLoading(true);
@@ -308,16 +258,8 @@ export default function DriverHomeScreen() {
     }
   };
 
-  // --------------------------------------------------
-  // UI
-  // --------------------------------------------------
-
   return (
     <View className="flex-1 bg-gray-50">
-      {/* ================================================
-          HEADER
-      ================================================= */}
-
       <View className="px-5 pb-4 pt-14">
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
@@ -345,10 +287,6 @@ export default function DriverHomeScreen() {
           </View>
         </View>
       </View>
-
-      {/* ================================================
-          MAP
-      ================================================= */}
 
       <View className="mx-5 flex-1 overflow-hidden rounded-3xl bg-gray-200 shadow-sm">
         <DriverMap
@@ -453,10 +391,6 @@ export default function DriverHomeScreen() {
           )}
         </Pressable>
       </View>
-
-      {/* ================================================
-          BOTTOM CONTROL PANEL
-      ================================================= */}
 
       <View className="px-5 pb-5 pt-4">
         {/* STATUS CARD */}

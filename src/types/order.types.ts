@@ -17,6 +17,7 @@ export enum PaymentStatus {
   PAID = "PAID",
   FAILED = "FAILED",
   REFUNDED = "REFUNDED",
+  ARRIVED = "ARRIVED",
 }
 
 export enum PaymentMethod {
@@ -56,13 +57,13 @@ export interface Restaurant {
 
 export interface Driver {
   _id: string;
+  userId?: string | { _id: string };
   vehicleType?: string;
   vehicleNumber?: string;
   phone?: string;
 }
 
 export interface Order {
-    
   _id: string;
   userId: string | OrderUser;
   restaurantId?: string | Restaurant | null;
@@ -84,3 +85,6 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Compatibility name used by the arrived-deliveries components. */
+export type DriverOrder = Order;
