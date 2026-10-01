@@ -5,9 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import DriverMap from "@/components/driver/DriverMap";
+import UnassignedOrders from "@/components/orders/UnassignedOrders";
 import { useAuth } from "@/context/AuthContext";
 import { useDriver } from "@/context/DriverContext";
 import { useOrder } from "@/context/OrderContext";
+import { orderApi } from "../../lib/api/order.api";
+import { OrderStatus, type Order } from "../../types/order.types";
 
 import {
   getCurrentLocation,
@@ -26,13 +29,29 @@ type DriverLocation = {
 };
 
 const TERMINAL = new Set(["DELIVERED", "CANCELLED"]);
+const PENDING_POLL_INTERVAL_MS = 5_000;
+
+function isUnassigned(order: Order): boolean {
+  const assignedDriver = order.driverId;
+  if (typeof assignedDriver === "string") return assignedDriver.length === 0;
+  return !assignedDriver || !assignedDriver._id;
+}
 
 export default function DriverHomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { profile, loading: profileLoading, refresh, setAvailability } =
-    useDriver();
-  const { orders, activeOrder, loading: ordersLoading } = useOrder();
+  const {
+    profile,
+    loading: profileLoading,
+    refresh,
+    setAvailability,
+  } = useDriver();
+  const {
+    orders,
+    activeOrder,
+    loading: ordersLoading,
+    refreshOrders,
+  } = useOrder();
 
   const activeCount = useMemo(
     () => orders.filter((o) => !TERMINAL.has(o.status)).length,
@@ -50,7 +69,95 @@ export default function DriverHomeScreen() {
   );
 
   const locationSubscription = useRef<LocationSubscription | null>(null);
+  const pendingRequestInFlight = useRef(false);
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [dismissedOrderIds, setDismissedOrderIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+  const [pendingError, setPendingError] = useState<string | null>(null);
   const isOnline = onlineOverride ?? profile?.isAvailable ?? false;
+  const visiblePendingOrders = useMemo(
+    () => pendingOrders.filter((order) => !dismissedOrderIds.has(order._id)),
+    [dismissedOrderIds, pendingOrders],
+  );
+
+  const refreshPendingOrders = useCallback(async () => {
+    if (!isOnline || pendingRequestInFlight.current) return;
+    pendingRequestInFlight.current = true;
+    setPendingLoading(true);
+    try {
+      const results = await orderApi.getAllOrders({
+        status: OrderStatus.PENDING,
+      });
+      setPendingOrders(results.filter(isUnassigned));
+      setDismissedOrderIds(new Set());
+      setPendingError(null);
+    } catch (error) {
+      setPendingError(
+        error instanceof Error
+          ? error.message
+          : "Could not load available orders.",
+      );
+    } finally {
+      pendingRequestInFlight.current = false;
+      setPendingLoading(false);
+    }
+  }, [isOnline]);
+
+  useEffect(() => {
+    if (!isOnline) return;
+
+    const initialRefresh = setTimeout(() => {
+      void refreshPendingOrders();
+    }, 0);
+    const interval = setInterval(() => {
+      void refreshPendingOrders();
+    }, PENDING_POLL_INTERVAL_MS);
+    return () => {
+      clearTimeout(initialRefresh);
+      clearInterval(interval);
+    };
+  }, [isOnline, refreshPendingOrders]);
+
+  const acceptPendingOrder = async (orderId: string) => {
+    if (!profile?._id || acceptingOrderId) return;
+    setAcceptingOrderId(orderId);
+    setPendingError(null);
+    try {
+      const latestOrder = await orderApi.getOrderById(orderId);
+      if (
+        latestOrder.status !== OrderStatus.PENDING ||
+        !isUnassigned(latestOrder)
+      ) {
+        setPendingOrders((current) =>
+          current.filter((item) => item._id !== orderId),
+        );
+        throw new Error("This order is no longer available.");
+      }
+
+      await orderApi.assignDriverToOrder(orderId, profile._id);
+      setPendingOrders((current) =>
+        current.filter((item) => item._id !== orderId),
+      );
+      setDismissedOrderIds((current) => new Set(current).add(orderId));
+      await Promise.all([refreshOrders(), refreshPendingOrders()]);
+    } catch (error) {
+      setPendingError(
+        error instanceof Error
+          ? `${error.message} The order may have been accepted by another driver.`
+          : "Could not accept this order. It may have been accepted by another driver.",
+      );
+      await refreshPendingOrders();
+    } finally {
+      setAcceptingOrderId(null);
+    }
+  };
+
+  const declinePendingOrder = (orderId: string) => {
+    setDismissedOrderIds((current) => new Set(current).add(orderId));
+  };
 
   const stopLocationTracking = useCallback(() => {
     if (locationSubscription.current) {
@@ -436,14 +543,28 @@ export default function DriverHomeScreen() {
         {/* ── DEBUG OVERLAY ── */}
         <View className="mb-3 rounded-2xl bg-slate-900 p-4 shadow-sm">
           <Text className="text-sm font-bold text-white mb-2">Debug Info:</Text>
-          <Text className="text-xs text-slate-300">User _id: {user?._id || "none"}</Text>
-          <Text className="text-xs text-slate-300">Driver _id: {profile?._id || "none"}</Text>
-          <Text className="text-xs text-slate-300">Total Orders in Redux: {orders.length}</Text>
-          <Text className="text-xs text-slate-300">Active Count: {activeCount}</Text>
+          <Text className="text-xs text-slate-300">
+            User _id: {user?._id || "none"}
+          </Text>
+          <Text className="text-xs text-slate-300">
+            Driver _id: {profile?._id || "none"}
+          </Text>
+          <Text className="text-xs text-slate-300">
+            Total Orders in Redux: {orders.length}
+          </Text>
+          <Text className="text-xs text-slate-300">
+            Active Count: {activeCount}
+          </Text>
           {orders.length > 0 && (
-             <Text className="text-xs text-emerald-400 mt-2">First order status: {orders[0].status}</Text>
+            <Text className="text-xs text-emerald-400 mt-2">
+              First order status: {orders[0].status}
+            </Text>
           )}
-          {ordersLoading && <Text className="text-xs text-amber-400 mt-2">Fetching orders...</Text>}
+          {ordersLoading && (
+            <Text className="text-xs text-amber-400 mt-2">
+              Fetching orders...
+            </Text>
+          )}
         </View>
         {/* ── END DEBUG OVERLAY ── */}
 
@@ -482,6 +603,19 @@ export default function DriverHomeScreen() {
           </Pressable>
         )}
 
+        <UnassignedOrders
+          orders={visiblePendingOrders}
+          isOnline={isOnline}
+          hasActiveOrder={Boolean(activeOrder)}
+          hasDriverProfile={Boolean(profile?._id)}
+          acceptingOrderId={acceptingOrderId}
+          error={pendingError}
+          loading={pendingLoading}
+          onAccept={(orderId) => void acceptPendingOrder(orderId)}
+          onDecline={declinePendingOrder}
+          onRefresh={() => void refreshPendingOrders()}
+        />
+
         {/* AVAILABILITY ERROR */}
 
         {availabilityError && (
@@ -511,8 +645,7 @@ export default function DriverHomeScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityState={{
-            disabled:
-              availabilityLoading || locationLoading || profileLoading,
+            disabled: availabilityLoading || locationLoading || profileLoading,
           }}
           disabled={availabilityLoading || locationLoading || profileLoading}
           onPress={toggleAvailability}
