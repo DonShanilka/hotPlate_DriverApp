@@ -13,10 +13,10 @@ import { orderApi } from "../../lib/api/order.api";
 import { OrderStatus, type Order } from "../../types/order.types";
 
 import {
-  getCurrentLocation,
-  requestLocationPermission,
-  SRI_LANKA_CENTER,
-  watchDriverLocation,
+    getCurrentLocation,
+    requestLocationPermission,
+    SRI_LANKA_CENTER,
+    watchDriverLocation,
 } from "../../lib/services/location.service";
 
 type DriverLocation = {
@@ -31,10 +31,28 @@ type DriverLocation = {
 const TERMINAL = new Set(["DELIVERED", "CANCELLED"]);
 const PENDING_POLL_INTERVAL_MS = 5_000;
 
-function isUnassigned(order: Order): boolean {
+function isAvailableOrder(value: unknown): value is Order {
+  if (!value || typeof value !== "object") return false;
+
+  const order = value as Partial<Order>;
   const assignedDriver = order.driverId;
-  if (typeof assignedDriver === "string") return assignedDriver.length === 0;
-  return !assignedDriver || !assignedDriver._id;
+  const hasNoDriver =
+    !assignedDriver ||
+    (typeof assignedDriver === "string" && assignedDriver.trim() === "") ||
+    (typeof assignedDriver === "object" && !assignedDriver._id);
+
+  return (
+    typeof order._id === "string" &&
+    order._id.trim().length > 0 &&
+    order.status === OrderStatus.PENDING &&
+    hasNoDriver &&
+    typeof order.deliveryAddress === "string" &&
+    order.deliveryAddress.trim().length > 0 &&
+    Array.isArray(order.items) &&
+    order.items.length > 0 &&
+    typeof order.totalAmount === "number" &&
+    Number.isFinite(order.totalAmount)
+  );
 }
 
 export default function DriverHomeScreen() {
@@ -91,7 +109,9 @@ export default function DriverHomeScreen() {
       const results = await orderApi.getAllOrders({
         status: OrderStatus.PENDING,
       });
-      setPendingOrders(results.filter(isUnassigned));
+      // The feed endpoint can return incomplete/stale rows. Only render real,
+      // actionable pending orders with an id, destination, items, and total.
+      setPendingOrders(results.filter(isAvailableOrder));
       setDismissedOrderIds(new Set());
       setPendingError(null);
     } catch (error) {
@@ -129,7 +149,7 @@ export default function DriverHomeScreen() {
       const latestOrder = await orderApi.getOrderById(orderId);
       if (
         latestOrder.status !== OrderStatus.PENDING ||
-        !isUnassigned(latestOrder)
+        !isAvailableOrder(latestOrder)
       ) {
         setPendingOrders((current) =>
           current.filter((item) => item._id !== orderId),

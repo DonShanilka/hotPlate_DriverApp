@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    Text,
+    View,
 } from "react-native";
 
 import type { Order } from "../../types/order.types";
@@ -80,8 +80,8 @@ export default function UnassignedOrders({
         </View>
       ) : orders.length === 0 ? (
         <Text className="text-xs leading-5 text-slate-500">
-          No unassigned orders right now. New orders are checked every 5
-          seconds.
+          No valid unassigned orders right now. New orders are checked every 5
+          seconds. Skipped offers can appear again on the next refresh.
         </Text>
       ) : (
         <ScrollView
@@ -122,13 +122,13 @@ export default function UnassignedOrders({
                 <View className="mt-3 flex-row gap-2">
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Decline order ${order._id.slice(-6)}`}
+                    accessibilityLabel={`Skip order ${order._id.slice(-6)}`}
                     disabled={acceptingAny}
                     onPress={() => onDecline(order._id)}
                     className="min-h-10 flex-1 items-center justify-center rounded-lg border border-slate-300 bg-white"
                   >
                     <Text className="text-xs font-bold text-slate-700">
-                      Decline
+                      Skip
                     </Text>
                   </Pressable>
                   <Pressable
