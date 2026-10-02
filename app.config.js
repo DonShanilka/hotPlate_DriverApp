@@ -15,5 +15,5 @@ module.exports = {
     ...(appConfig.extra || {}),
     googleMapsIOSConfigured: Boolean(process.env.GOOGLE_MAPS_IOS_API_KEY),
   },
-  plugins: [...(appConfig.plugins || []), mapsPlugin],
+  plugins: [...(appConfig.plugins || []), "expo-notifications", mapsPlugin],
 };

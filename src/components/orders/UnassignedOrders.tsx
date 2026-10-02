@@ -80,7 +80,7 @@ export default function UnassignedOrders({
         </View>
       ) : orders.length === 0 ? (
         <Text className="text-xs leading-5 text-slate-500">
-          No valid unassigned orders right now. New orders are checked every 5
+          No valid unassigned orders right now. New orders are checked every 8
           seconds. Skipped offers can appear again on the next refresh.
         </Text>
       ) : (

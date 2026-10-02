@@ -1,8 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { LocationSubscription } from "expo-location";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+    ActivityIndicator,
+    Platform,
+    Pressable,
+    Text,
+    View,
+} from "react-native";
 
 import DriverMap from "@/components/driver/DriverMap";
 import UnassignedOrders from "@/components/orders/UnassignedOrders";
@@ -29,7 +36,71 @@ type DriverLocation = {
 };
 
 const TERMINAL = new Set(["DELIVERED", "CANCELLED"]);
-const PENDING_POLL_INTERVAL_MS = 5_000;
+const PENDING_POLL_INTERVAL_MS = 8_000;
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+let orderAlertPermission: Promise<boolean> | null = null;
+
+async function canPlayOrderAlert(): Promise<boolean> {
+  if (!orderAlertPermission) {
+    orderAlertPermission = (async () => {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "Order alerts",
+          importance: Notifications.AndroidImportance.MAX,
+          sound: "default",
+          vibrationPattern: [0, 250, 150, 250],
+        });
+      }
+
+      const currentPermission = await Notifications.getPermissionsAsync();
+      const permission = currentPermission.granted
+        ? currentPermission
+        : await Notifications.requestPermissionsAsync();
+      return permission.granted;
+    })().catch((error: unknown) => {
+      orderAlertPermission = null;
+      console.warn("Could not enable new order alerts:", error);
+      return false;
+    });
+  }
+
+  return orderAlertPermission;
+}
+
+async function playPendingOrdersAlert(orders: Order[]): Promise<void> {
+  if (orders.length === 0) return;
+
+  try {
+    if (!(await canPlayOrderAlert())) return;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title:
+          orders.length === 1
+            ? "Delivery order available"
+            : "Delivery orders available",
+        body:
+          orders.length === 1
+            ? `Order #${orders[0]._id.slice(-6).toUpperCase()} is waiting. Tap to view and accept.`
+            : `${orders.length} pending orders are waiting. Tap to view and accept.`,
+        sound: "default",
+        data: { orderIds: orders.map((order) => order._id) },
+      },
+      trigger: null,
+    });
+  } catch (error) {
+    console.warn("Could not play the new order alert:", error);
+  }
+}
 
 function isAvailableOrder(value: unknown): value is Order {
   if (!value || typeof value !== "object") return false;
@@ -64,12 +135,7 @@ export default function DriverHomeScreen() {
     refresh,
     setAvailability,
   } = useDriver();
-  const {
-    orders,
-    activeOrder,
-    loading: ordersLoading,
-    refreshOrders,
-  } = useOrder();
+  const { orders, activeOrder, refreshOrders } = useOrder();
 
   const activeCount = useMemo(
     () => orders.filter((o) => !TERMINAL.has(o.status)).length,
@@ -111,9 +177,11 @@ export default function DriverHomeScreen() {
       });
       // The feed endpoint can return incomplete/stale rows. Only render real,
       // actionable pending orders with an id, destination, items, and total.
-      setPendingOrders(results.filter(isAvailableOrder));
+      const availableOrders = results.filter(isAvailableOrder);
+      setPendingOrders(availableOrders);
       setDismissedOrderIds(new Set());
       setPendingError(null);
+      void playPendingOrdersAlert(availableOrders);
     } catch (error) {
       setPendingError(
         error instanceof Error
@@ -561,7 +629,7 @@ export default function DriverHomeScreen() {
         </View>
 
         {/* ── DEBUG OVERLAY ── */}
-        <View className="mb-3 rounded-2xl bg-slate-900 p-4 shadow-sm">
+        {/* <View className="mb-3 rounded-2xl bg-slate-900 p-4 shadow-sm">
           <Text className="text-sm font-bold text-white mb-2">Debug Info:</Text>
           <Text className="text-xs text-slate-300">
             User _id: {user?._id || "none"}
@@ -585,8 +653,7 @@ export default function DriverHomeScreen() {
               Fetching orders...
             </Text>
           )}
-        </View>
-        {/* ── END DEBUG OVERLAY ── */}
+        </View> */}
 
         {/* ACTIVE ORDER CARD */}
 
