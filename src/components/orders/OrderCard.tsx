@@ -3,7 +3,10 @@ import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { Order } from "../../types/order.types";
 import OrderStatusBadge from "./OrderStatusBadge";
 
-interface Props {order: Order; onPress: () => void;}
+interface Props {
+  order: Order;
+  onPress: () => void;
+}
 
 const OrderCard = ({ order, onPress }: Props) => {
   return (

@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 
 import type { Order } from "../../types/order.types";

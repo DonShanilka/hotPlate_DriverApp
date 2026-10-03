@@ -195,17 +195,19 @@ export default function ArrivedOrderCard({ order }: { order: PopulatedOrder }) {
             <Ionicons name={statusConfig.icon} size={18} color="#059669" />
           </View>
           <View className="flex-1">
-            <Text className="text-sm font-bold text-slate-900">
-              #{orderId}
-            </Text>
+            <Text className="text-sm font-bold text-slate-900">#{orderId}</Text>
             <Text className="text-xs text-slate-400">{placedTime}</Text>
           </View>
         </View>
         <View
           className={`flex-row items-center rounded-full px-2.5 py-1 ${statusConfig.bg}`}
         >
-          <View className={`mr-1.5 h-1.5 w-1.5 rounded-full ${statusConfig.dot}`} />
-          <Text className={`text-[10px] font-bold uppercase ${statusConfig.text}`}>
+          <View
+            className={`mr-1.5 h-1.5 w-1.5 rounded-full ${statusConfig.dot}`}
+          />
+          <Text
+            className={`text-[10px] font-bold uppercase ${statusConfig.text}`}
+          >
             {statusLabel}
           </Text>
         </View>
@@ -216,7 +218,10 @@ export default function ArrivedOrderCard({ order }: { order: PopulatedOrder }) {
         {restaurantName ? (
           <View className="mb-2.5 flex-row items-center">
             <Ionicons name="restaurant-outline" size={15} color="#059669" />
-            <Text className="ml-2 flex-1 text-sm font-semibold text-slate-800" numberOfLines={1}>
+            <Text
+              className="ml-2 flex-1 text-sm font-semibold text-slate-800"
+              numberOfLines={1}
+            >
               {restaurantName}
             </Text>
           </View>
@@ -226,7 +231,10 @@ export default function ArrivedOrderCard({ order }: { order: PopulatedOrder }) {
         {customerName ? (
           <View className="mb-2.5 flex-row items-center">
             <Ionicons name="person-outline" size={15} color="#64748b" />
-            <Text className="ml-2 flex-1 text-sm text-slate-700" numberOfLines={1}>
+            <Text
+              className="ml-2 flex-1 text-sm text-slate-700"
+              numberOfLines={1}
+            >
               {customerName}
             </Text>
           </View>
@@ -234,8 +242,16 @@ export default function ArrivedOrderCard({ order }: { order: PopulatedOrder }) {
 
         {/* ── Delivery address ── */}
         <View className="mb-2.5 flex-row items-start">
-          <Ionicons name="location-outline" size={15} color="#64748b" style={{ marginTop: 1 }} />
-          <Text className="ml-2 flex-1 text-sm leading-5 text-slate-600" numberOfLines={2}>
+          <Ionicons
+            name="location-outline"
+            size={15}
+            color="#64748b"
+            style={{ marginTop: 1 }}
+          />
+          <Text
+            className="ml-2 flex-1 text-sm leading-5 text-slate-600"
+            numberOfLines={2}
+          >
             {order.deliveryAddress}
           </Text>
         </View>
@@ -243,8 +259,15 @@ export default function ArrivedOrderCard({ order }: { order: PopulatedOrder }) {
         {/* ── Notes indicator ── */}
         {order.notes ? (
           <View className="mb-2.5 flex-row items-center rounded-lg bg-amber-50 px-2.5 py-1.5">
-            <Ionicons name="chatbubble-ellipses-outline" size={13} color="#92400e" />
-            <Text className="ml-1.5 flex-1 text-xs text-amber-800" numberOfLines={1}>
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={13}
+              color="#92400e"
+            />
+            <Text
+              className="ml-1.5 flex-1 text-xs text-amber-800"
+              numberOfLines={1}
+            >
               {order.notes}
             </Text>
           </View>
@@ -280,7 +303,12 @@ export default function ArrivedOrderCard({ order }: { order: PopulatedOrder }) {
         <Text className="text-[11px] font-medium text-slate-400">
           Tap to view details
         </Text>
-        <Ionicons name="chevron-forward" size={12} color="#94a3b8" style={{ marginLeft: 2 }} />
+        <Ionicons
+          name="chevron-forward"
+          size={12}
+          color="#94a3b8"
+          style={{ marginLeft: 2 }}
+        />
       </View>
     </View>
   );
