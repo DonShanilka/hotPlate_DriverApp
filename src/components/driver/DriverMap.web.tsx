@@ -1,6 +1,6 @@
-import { createElement, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { createElement, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
 interface Props {
   latitude: number;
@@ -18,39 +18,43 @@ export default function DriverMap({
   const openMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 
   return (
-    <View style={styles.container}>
+    <View className="relative flex-1 overflow-hidden bg-[#eaf1ec]">
       {createElement("iframe", {
         title: "Driver Google Map",
         src: googleMapsUrl,
         loading: "lazy",
         referrerPolicy: "no-referrer-when-downgrade",
         allowFullScreen: true,
-        style: styles.map,
+        className: "h-full w-full border-0",
       })}
-      <View style={styles.zoomControls}>
+      <View className="absolute right-3 top-3 overflow-hidden rounded-xl bg-white shadow-md">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Zoom in"
           disabled={zoom >= 21}
           onPress={() => setZoom((current) => Math.min(21, current + 1))}
-          style={styles.zoomButton}
+          className="h-11 w-11 cursor-pointer items-center justify-center"
         >
           <Ionicons name="add" size={24} color="#1f2937" />
         </Pressable>
-        <View style={styles.separator} />
+        <View className="h-px bg-slate-200" />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Zoom out"
           disabled={zoom <= 3}
           onPress={() => setZoom((current) => Math.max(3, current - 1))}
-          style={styles.zoomButton}
+          className="h-11 w-11 cursor-pointer items-center justify-center"
         >
           <Ionicons name="remove" size={24} color="#1f2937" />
         </Pressable>
       </View>
-      <View pointerEvents="box-none" style={styles.locationLabel}>
-        <Text style={styles.coordinates}>
-          {isApproximate ? "Approximate map center" : "Current location"}: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+      <View
+        pointerEvents="box-none"
+        className="absolute bottom-3 left-3 rounded-xl bg-white/95 px-3 py-2"
+      >
+        <Text className="text-xs font-semibold text-[#26382d]">
+          {isApproximate ? "Approximate map center" : "Current location"}:{" "}
+          {latitude.toFixed(5)}, {longitude.toFixed(5)}
         </Text>
         {createElement(
           "a",
@@ -58,7 +62,7 @@ export default function DriverMap({
             href: openMapsUrl,
             target: "_blank",
             rel: "noreferrer",
-            style: styles.link,
+            className: "mt-1 text-sm text-green-700 underline",
           },
           "Open in Google Maps",
         )}
@@ -66,56 +70,3 @@ export default function DriverMap({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#eaf1ec",
-  },
-  map: {
-    width: "100%",
-    height: "100%",
-    borderWidth: 0,
-  },
-  zoomControls: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    overflow: "hidden",
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-  },
-  zoomButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#e5e7eb",
-  },
-  locationLabel: {
-    position: "absolute",
-    left: 12,
-    bottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.96)",
-  },
-  coordinates: {
-    fontSize: 12,
-    color: "#26382d",
-    fontWeight: "600",
-  },
-  link: {
-    marginTop: 3,
-    color: "#15803d",
-    textDecorationLine: "underline",
-  },
-});

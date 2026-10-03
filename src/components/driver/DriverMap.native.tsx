@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useEffect, useRef } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 const DRIVER_MAP_STYLE = [
@@ -82,11 +82,10 @@ export default function DriverMap({
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
       <MapView
         ref={mapRef}
-        style={StyleSheet.absoluteFill}
-        // Without an iOS Google Maps key, use Apple Maps rather than a blank map.
+        className="absolute inset-0"
         provider={useGoogleMaps ? PROVIDER_GOOGLE : undefined}
         initialRegion={{
           latitude,
@@ -115,21 +114,21 @@ export default function DriverMap({
           }
         />
       </MapView>
-      <View style={styles.zoomControls}>
+      <View className="absolute right-3.5 top-3.5 overflow-hidden rounded-xl bg-white shadow-md">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Zoom in"
           onPress={() => changeZoom(0.5)}
-          style={styles.zoomButton}
+          className="h-11 w-11 items-center justify-center"
         >
           <Ionicons name="add" size={24} color="#1f2937" />
         </Pressable>
-        <View style={styles.separator} />
+        <View className="h-px bg-slate-200" />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Zoom out"
           onPress={() => changeZoom(2)}
-          style={styles.zoomButton}
+          className="h-11 w-11 items-center justify-center"
         >
           <Ionicons name="remove" size={24} color="#1f2937" />
         </Pressable>
@@ -137,27 +136,3 @@ export default function DriverMap({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  zoomControls: {
-    position: "absolute",
-    right: 14,
-    top: 14,
-    overflow: "hidden",
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-  },
-  zoomButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: "#e5e7eb" },
-});

@@ -1,6 +1,4 @@
-import React from "react";
-
-import { View, Text, StyleSheet } from "react-native";
+import { Text, View } from "react-native";
 
 import { OrderStatus } from "../../types/order.types";
 
@@ -12,30 +10,10 @@ const OrderStatusBadge = ({ status }: Props) => {
   const label = status.replaceAll("_", " ");
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{label}</Text>
+    <View className="self-start rounded-full bg-blue-50 px-2.5 py-1.5">
+      <Text className="text-[11px] font-bold text-blue-900">{label}</Text>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#EAF4FF",
-
-    paddingHorizontal: 10,
-
-    paddingVertical: 6,
-
-    borderRadius: 20,
-
-    alignSelf: "flex-start",
-  },
-
-  text: {
-    fontSize: 11,
-
-    fontWeight: "700",
-  },
-});
 
 export default OrderStatusBadge;
