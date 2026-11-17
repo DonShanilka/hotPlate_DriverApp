@@ -72,6 +72,7 @@ export interface Order {
   deliveryAddress: string;
   phoneNumber: string;
   deliveryLocation?: DeliveryLocation;
+  restaurantLocation?: DeliveryLocation;
   subtotal?: number;
   deliveryFee?: number;
   totalAmount: number;

@@ -11,6 +11,14 @@ const mapsPlugin = [
 
 module.exports = {
   ...appConfig,
+  ios: {
+    ...(appConfig.ios || {}),
+    bundleIdentifier: appConfig.ios?.bundleIdentifier || "com.hotplatedriverapp",
+  },
+  android: {
+    ...(appConfig.android || {}),
+    package: appConfig.android?.package || "com.hotplatedriverapp",
+  },
   extra: {
     ...(appConfig.extra || {}),
     googleMapsIOSConfigured: Boolean(process.env.GOOGLE_MAPS_IOS_API_KEY),

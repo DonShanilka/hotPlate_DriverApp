@@ -178,14 +178,33 @@ export default function DriverProfileScreen() {
         {!profile ? (
           <View className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <Text className="font-semibold text-amber-900">
-              Driver details are not set up yet.
+              Driver profile setup is required.
             </Text>
             <Text className="mt-1 text-sm text-amber-800">
-              Your account is loaded, but the backend did not return a driver
-              record. Ask the backend to create/link a driver record for this
-              user, then refresh this screen.
+              Enter your vehicle, license, phone, and address details below.
+              Your driver profile will be saved when you tap Create driver profile.
             </Text>
           </View>
+        ) : null}
+
+        {!profile && !isEditing ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            className="mb-4 h-[52px] items-center justify-center rounded-xl bg-green-600"
+            onPress={() => {
+              setForm({
+                vehicleType: "BIKE",
+                vehicleNumber: "",
+                licenseNumber: "",
+                phone: user?.phone ?? "",
+                address: "",
+                isAvailable: false,
+              });
+              setIsEditing(true);
+            }}
+          >
+            <Text className="font-bold text-white">Set up driver profile</Text>
+          </TouchableOpacity>
         ) : null}
 
         <VehicleDetails
@@ -247,7 +266,7 @@ export default function DriverProfileScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text className="text-base font-bold text-white">
-                  Save changes
+                  {profile ? "Save changes" : "Create driver profile"}
                 </Text>
               )}
             </TouchableOpacity>

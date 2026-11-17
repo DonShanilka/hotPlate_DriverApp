@@ -19,8 +19,21 @@ import {
 } from "../../lib/services/location.service";
 import { fetchOrderById } from "../../redux/features/order/orderThunk";
 import { useAppDispatch, useAppSelector } from "../../redux/store/hooks";
+import { apiPatch } from "../../lib/api/client";
 
 type MapPoint = { latitude: number; longitude: number };
+
+function distanceInKm(from: MapPoint, to: MapPoint): number {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latDelta = radians(to.latitude - from.latitude);
+  const lngDelta = radians(to.longitude - from.longitude);
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(radians(from.latitude)) *
+      Math.cos(radians(to.latitude)) *
+      Math.sin(lngDelta / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function getDeliveryPoint(value: unknown): MapPoint | null {
   if (!value || typeof value !== "object") return null;
@@ -75,25 +88,33 @@ export default function DeliveryTrackingScreen() {
   const useGoogleMaps =
     Platform.OS === "android" ||
     Boolean(Constants.expoConfig?.extra?.googleMapsIOSConfigured);
-  const point = getDeliveryPoint(order?.deliveryLocation);
+  const deliveryPoint = getDeliveryPoint(order?.deliveryLocation);
+  const restaurantPoint = getDeliveryPoint(order?.restaurantLocation);
+  const isGoingToRestaurant = ["DRIVER_ASSIGNED", "READY_FOR_PICKUP"].includes(order?.status ?? "");
+  const point = isGoingToRestaurant ? restaurantPoint : deliveryPoint;
+  const remainingDistance = riderLocation && point
+    ? distanceInKm(riderLocation, point)
+    : null;
+  const lastReportedAt = useRef(0);
 
   const fitRoute = useCallback(() => {
     if (!point || !riderLocation || hasFittedRoute.current) return;
+    const coordinates: MapPoint[] = [riderLocation, point];
+    if (restaurantPoint && !coordinates.includes(restaurantPoint)) {
+      coordinates.push(restaurantPoint);
+    }
+    if (deliveryPoint && !coordinates.includes(deliveryPoint)) {
+      coordinates.push(deliveryPoint);
+    }
     mapRef.current?.fitToCoordinates(
-      [
-        {
-          latitude: riderLocation.latitude,
-          longitude: riderLocation.longitude,
-        },
-        point,
-      ],
+      coordinates,
       {
         edgePadding: { top: 120, right: 48, bottom: 230, left: 48 },
         animated: true,
       },
     );
     hasFittedRoute.current = true;
-  }, [point, riderLocation]);
+  }, [deliveryPoint, point, restaurantPoint, riderLocation]);
 
   useEffect(() => {
     hasFittedRoute.current = false;
@@ -138,6 +159,17 @@ export default function DeliveryTrackingScreen() {
   useEffect(() => {
     fitRoute();
   }, [fitRoute]);
+
+  useEffect(() => {
+    if (!orderId || !riderLocation || !order || !["DRIVER_ASSIGNED", "READY_FOR_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERING", "ARRIVED"].includes(order.status)) return;
+    const now = Date.now();
+    if (now - lastReportedAt.current < 4000) return;
+    lastReportedAt.current = now;
+    void apiPatch("/tracking/driver/location", {
+      orderId, latitude: riderLocation.latitude, longitude: riderLocation.longitude,
+      heading: riderLocation.heading, speed: riderLocation.speed, accuracy: riderLocation.accuracy,
+    }).catch(() => { /* Next GPS update will retry without interrupting navigation. */ });
+  }, [orderId, riderLocation, order]);
 
   useEffect(() => {
     if (orderId && !order) void dispatch(fetchOrderById(orderId));
@@ -185,16 +217,15 @@ export default function DeliveryTrackingScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      {point ? (
-        <MapView
+      <MapView
           ref={mapRef}
           className="flex-1"
           provider={useGoogleMaps ? PROVIDER_GOOGLE : undefined}
           initialRegion={{
-            latitude: point.latitude,
-            longitude: point.longitude,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
+            latitude: point?.latitude ?? riderLocation?.latitude ?? 7.8731,
+            longitude: point?.longitude ?? riderLocation?.longitude ?? 80.7718,
+            latitudeDelta: 0.04,
+            longitudeDelta: 0.04,
           }}
           onMapReady={fitRoute}
           showsCompass
@@ -210,7 +241,7 @@ export default function DeliveryTrackingScreen() {
                 description="Live GPS location"
                 pinColor="#2563eb"
               />
-              <Polyline
+              {point ? <Polyline
                 coordinates={[
                   {
                     latitude: riderLocation.latitude,
@@ -221,18 +252,28 @@ export default function DeliveryTrackingScreen() {
                 strokeColor="#059669"
                 strokeWidth={5}
                 lineDashPattern={[1]}
-              />
+              /> : null}
             </>
           ) : null}
-          <Marker
-            coordinate={point}
-            title="Delivery destination"
-            description={order.deliveryAddress}
-            pinColor="#dc2626"
-          />
-        </MapView>
-      ) : (
-        <View className="flex-1 items-center justify-center px-8">
+          {restaurantPoint ? (
+            <Marker
+              coordinate={restaurantPoint}
+              title="Restaurant pickup"
+              description="Collect the order here"
+              pinColor="#16a34a"
+            />
+          ) : null}
+          {deliveryPoint ? (
+            <Marker
+              coordinate={deliveryPoint}
+              title="Customer delivery"
+              description={order.deliveryAddress}
+              pinColor="#dc2626"
+            />
+          ) : null}
+      </MapView>
+      {!point ? (
+        <View className="absolute left-8 right-8 top-1/2 items-center rounded-2xl bg-white/90 p-5">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-amber-50">
             <Ionicons name="location-outline" size={32} color="#d97706" />
           </View>
@@ -243,7 +284,7 @@ export default function DeliveryTrackingScreen() {
             This order does not contain valid delivery coordinates.
           </Text>
         </View>
-      )}
+      ) : null}
 
       <View className="absolute left-4 right-4 top-14 z-10 flex-row items-center rounded-2xl bg-white p-3 shadow-md">
         <Pressable
@@ -267,14 +308,24 @@ export default function DeliveryTrackingScreen() {
       <View className="absolute bottom-5 left-4 right-4 rounded-2xl bg-white p-4 shadow-lg">
         <View className="flex-row items-center justify-between">
           <Text className="text-base font-bold text-slate-900">
-            Delivery destination
+            {isGoingToRestaurant ? "Restaurant pickup" : "Customer delivery"}
           </Text>
           <Text className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
             {order.status.replaceAll("_", " ")}
           </Text>
         </View>
+        {remainingDistance !== null ? (
+          <View className="mt-3 flex-row items-center rounded-xl bg-emerald-50 px-3 py-2">
+            <Ionicons name="navigate-outline" size={17} color="#047857" />
+            <Text className="ml-2 text-sm font-semibold text-emerald-800">
+              {remainingDistance < 1
+                ? `${Math.round(remainingDistance * 1000)} m`
+                : `${remainingDistance.toFixed(1)} km`} straight-line distance
+            </Text>
+          </View>
+        ) : null}
         <Text selectable className="mt-2 text-sm leading-5 text-slate-600">
-          {order.deliveryAddress}
+          {isGoingToRestaurant ? "Head to the restaurant to collect this order." : order.deliveryAddress}
         </Text>
         <View className="mt-3 flex-row items-center">
           <Ionicons
@@ -301,14 +352,14 @@ export default function DeliveryTrackingScreen() {
           >
             <Ionicons name="navigate" size={18} color="#fff" />
             <Text className="ml-2 font-bold text-white">
-              Navigate to delivery
+              Navigate to {isGoingToRestaurant ? "restaurant" : "customer"}
             </Text>
           </Pressable>
         ) : null}
         {point && riderLocation ? (
           <Text className="mt-2 text-center text-[11px] text-slate-400">
-            The map line connects your live location to the destination.
-            Turn-by-turn road directions open in Google Maps.
+            Distance is measured directly between GPS points. Road distance and
+            turn-by-turn directions open in Google Maps.
           </Text>
         ) : null}
       </View>
